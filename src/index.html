@@ -23,8 +23,11 @@
 
             --text-primary:     #cdd6f4;
             --text-secondary:   #6c7086;
+            --text-reason:      #9399b2;
             --text-muted:       #45475a;
             --text-inverse:     #0d0f14;
+
+            --exec-reason-color: #a6adc8;
 
             --accent:           #89b4fa;
             --accent-hover:     #b4ccff;
@@ -73,8 +76,11 @@
 
             --text-primary:     #1e2040;
             --text-secondary:   #6b7280;
+            --text-reason:      #374151;
             --text-muted:       #9ca3af;
             --text-inverse:     #ffffff;
+
+            --exec-reason-color: #374151;
 
             --accent:           #2563eb;
             --accent-hover:     #1d4ed8;
@@ -486,10 +492,11 @@
         }
 
         .phase-nav-btn {
-            display:      flex;
-            align-items:  center;
-            gap:          8px;
-            padding:      10px 18px;
+            display:         flex;
+            align-items:     center;
+            justify-content: center;
+            gap:             8px;
+            padding:         10px 18px;
             background:   var(--bg-surface);
             border:       1px solid var(--border);
             border-radius: var(--radius-md);
@@ -1067,16 +1074,23 @@
         }
 
         .exec-step-call {
-            font-family:  var(--font-mono);
-            font-size:    0.82rem;
-            color:        var(--cyan);
-            margin-bottom: 3px;
-            word-break:   break-all;
+            font-family:    var(--font-mono);
+            font-size:      0.8rem;
+            color:          var(--cyan);
+            background:     var(--bg-elevated);
+            border:         1px solid var(--border);
+            border-radius:  var(--radius-sm);
+            padding:        6px 10px;
+            margin-bottom:  6px;
+            white-space:    pre-wrap;
+            word-break:     break-all;
+            display:        block;
+            line-height:    1.6;
         }
 
         .exec-step-reason {
             font-size:    0.8rem;
-            color:        var(--text-muted);
+            color:        var(--text-reason);
             line-height:  1.5;
         }
 
@@ -1086,6 +1100,83 @@
             border:        1px solid var(--border);
             border-radius: var(--radius-md);
             overflow:      hidden;
+        }
+
+        /* ── Phase tabs ──────────────────────────────────────── */
+        .phase-tabs {
+            display:        flex;
+            gap:            0;
+            border-bottom:  1px solid var(--border);
+            margin-bottom:  24px;
+            overflow-x:     auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            flex-wrap:      nowrap;
+        }
+
+        .phase-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .phase-tab {
+            display:        inline-flex;
+            align-items:    center;
+            gap:            6px;
+            padding:        9px 16px;
+            font-family:    var(--font-sans);
+            font-size:      0.82rem;
+            font-weight:    600;
+            color:          var(--text-muted);
+            background:     transparent;
+            border:         none;
+            border-bottom:  2px solid transparent;
+            cursor:         pointer;
+            white-space:    nowrap;
+            transition:
+                    color        var(--transition-fast),
+                    border-color var(--transition-fast),
+                    background   var(--transition-fast);
+            margin-bottom:  -1px;
+            flex-shrink:    0;
+        }
+
+        .phase-tab:hover {
+            color:       var(--text-primary);
+            background:  var(--bg-elevated);
+        }
+
+        .phase-tab.active {
+            color:        var(--accent);
+            border-bottom-color: var(--accent);
+            background:   transparent;
+        }
+
+        .phase-tab .tab-count {
+            font-size:    0.68rem;
+            font-weight:  600;
+            padding:      1px 6px;
+            border-radius: 99px;
+            background:   var(--bg-elevated);
+            border:       1px solid var(--border);
+            color:        var(--text-muted);
+            transition:
+                    background var(--transition-fast),
+                    color      var(--transition-fast);
+        }
+
+        .phase-tab.active .tab-count {
+            background:  var(--accent-glow);
+            border-color: var(--border-accent);
+            color:       var(--accent);
+        }
+
+        .phase-tab-pane {
+            display: none;
+        }
+
+        .phase-tab-pane.active {
+            display: block;
+            animation: fadeSlideIn var(--transition-mid) both;
         }
 
         .code-example-meta {
@@ -1509,6 +1600,20 @@
             color:       var(--accent);
             border-left: 3px solid var(--accent);
             padding-left: 13px;
+        }
+
+        .sidebar-fn-item:hover {
+            background: var(--bg-elevated);
+            color:      var(--text-primary);
+        }
+
+        .sidebar-fn-item.active {
+            color: var(--accent);
+        }
+
+        .sidebar-fn-item.hovered {
+            background: var(--bg-elevated);
+            color:      var(--accent);
         }
 
         /* ── Highlighted search text ──────────────────────────── */
@@ -2229,6 +2334,20 @@
                 font-size: 0.76rem;
             }
 
+            /* ── Phase tabs ─────────────────────────────────────── */
+            .phase-tabs {
+                margin-bottom: 16px;
+            }
+
+            .phase-tab {
+                padding:   8px 12px;
+                font-size: 0.78rem;
+            }
+
+            .phase-tab .tab-count {
+                display: none;
+            }
+
             /* ── Code blocks: tighten padding + ensure scroll ── */
             pre {
                 padding:   14px;
@@ -2248,11 +2367,7 @@
 
             /* Copy button always visible on mobile (no hover) */
             .copy-btn {
-                opacity:   1;
-                font-size: 0.68rem;
-                padding:   3px 8px;
-                top:       8px;
-                right:     8px;
+                display: none;
             }
 
             /* ── Integration grid ────────────────────────────── */
@@ -2390,6 +2505,11 @@
             pre {
                 font-size: 0.72rem;
                 padding:   10px;
+            }
+
+            .phase-tab {
+                padding:   7px 10px;
+                font-size: 0.74rem;
             }
         }
 
@@ -2716,12 +2836,15 @@
         return String(str || '').trim();
     }
 
-    function buildCodeBlock(snippet, location, description) {
+    function buildCodeBlock(snippet, location, description, stepNum) {
         const highlighted = highlight(txt(snippet));
         return `
     <div class="code-example-wrap">
       <div class="code-example-meta">
-        <span class="code-location-badge">${escHtml(txt(location))}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          ${stepNum ? `<span class="code-location-badge" style="color:var(--accent);border-color:var(--border-accent);">${escHtml(stepNum)}</span>` : ''}
+          <span class="code-location-badge">${escHtml(txt(location))}</span>
+        </div>
       </div>
       ${description ? `<p class="code-description">${escHtml(txt(description))}</p>` : ''}
       <div class="code-block-wrap">
@@ -2814,13 +2937,7 @@
         if (!steps || steps.length === 0) return '<p class="empty-state">No steps defined.</p>';
 
         const items = steps.map(s => `
-    <div class="exec-step">
-      <span class="exec-step-num">${String(s.step).padStart(2, '0')}</span>
-      <div class="exec-step-content">
-        <div class="exec-step-call">${escHtml(txt(s.call))}</div>
-        <div class="exec-step-reason">${escHtml(txt(s.reason))}</div>
-      </div>
-    </div>`).join('');
+    ${buildCodeBlock(txt(s.call), txt(s.reason), '', String(s.step).padStart(2, '0'))}`).join('');
 
         return `<div class="exec-list">${items}</div>`;
     }
@@ -2901,16 +3018,15 @@
 
         const prevBtn = prev
             ? `<button class="phase-nav-btn" onclick="showPhase('${prev.slug}')">
-         <span class="nav-arrow-left">←</span>
+
          <div class="phase-nav-label">
-           <span class="phase-nav-hint">Previous</span>
+           <span class="phase-nav-hint"><span class="nav-arrow-left">←</span> Previous</span>
            <span class="phase-nav-name">${escHtml(prev.name)}</span>
          </div>
        </button>`
             : `<button class="phase-nav-btn" disabled>
-         <span class="nav-arrow-left">←</span>
          <div class="phase-nav-label">
-           <span class="phase-nav-hint">Previous</span>
+           <span class="phase-nav-hint"><span class="nav-arrow-left">←</span> Previous</span>
            <span class="phase-nav-name">—</span>
          </div>
        </button>`;
@@ -2918,18 +3034,18 @@
         const nextBtn = next
             ? `<button class="phase-nav-btn" onclick="showPhase('${next.slug}')">
          <div class="phase-nav-label">
-           <span class="phase-nav-hint">Next</span>
+           <span class="phase-nav-hint">Next <span class="nav-arrow-right">→</span></span>
            <span class="phase-nav-name">${escHtml(next.name)}</span>
          </div>
-         <span class="nav-arrow-right">→</span>
        </button>`
             : `<button class="phase-nav-btn" disabled>
          <div class="phase-nav-label">
-           <span class="phase-nav-hint">Next</span>
+           <span class="phase-nav-hint">Next <span class="nav-arrow-right">→</span></span>
            <span class="phase-nav-name">—</span>
          </div>
-         <span class="nav-arrow-right">→</span>
        </button>`;
+
+        const tabId = `tabs-${phase.slug}`;
 
         return `
     <div class="phase-panel" id="phase-${phase.slug}">
@@ -2938,60 +3054,81 @@
         <div class="phase-number">${String(phase.order).padStart(2,'0')}</div>
         <div class="phase-header-text">
           <h2>${escHtml(phase.name)}</h2>
-          <div class="phase-header-meta">
-            <span class="badge badge-phase">${phase.slug}</span>
-            <span class="badge badge-core">${coreCount} core</span>
-            <span class="badge badge-supporting">${suppCount} supporting</span>
-            <span class="badge badge-neutral">${stepCount} steps</span>
-            <span class="badge badge-warn">${trapCount} traps</span>
+
+        </div>
+      </div>
+
+      <div class="phase-tabs" id="${tabId}" role="tablist">
+        <button class="phase-tab active" role="tab" onclick="switchTab('${tabId}','fns')">
+          ⬡ Functions <span class="tab-count">${coreCount + suppCount}</span>
+        </button>
+        <button class="phase-tab" role="tab" onclick="switchTab('${tabId}','exec')">
+          ↳ Execution <span class="tab-count">${stepCount}</span>
+        </button>
+        <button class="phase-tab" role="tab" onclick="switchTab('${tabId}','code')">
+          { } Code
+        </button>
+        <button class="phase-tab" role="tab" onclick="switchTab('${tabId}','integ')">
+          ⇄ Integration
+        </button>
+        <button class="phase-tab" role="tab" onclick="switchTab('${tabId}','traps')">
+          ⚠ Mistakes <span class="tab-count">${trapCount}</span>
+        </button>
+      </div>
+
+      <div class="phase-tab-pane active" id="${tabId}-fns">
+        <div class="section-block">
+          <div class="section-title">
+            <h3>⬡ Core Functions</h3>
+            <span class="section-count">${coreCount}</span>
           </div>
+          ${coreFns || '<p class="empty-state">No core functions defined.</p>'}
+        </div>
+        <div class="section-block">
+          <div class="section-title">
+            <h3>◈ Supporting Functions</h3>
+            <span class="section-count">${suppCount}</span>
+          </div>
+          ${suppFns || '<p class="empty-state">No supporting functions defined.</p>'}
         </div>
       </div>
 
-      <div class="section-block">
-        <div class="section-title">
-          <h3>⬡ Core Functions</h3>
-          <span class="section-count">${coreCount}</span>
+      <div class="phase-tab-pane" id="${tabId}-exec">
+        <div class="section-block">
+          <div class="section-title">
+            <h3>↳ Execution Order</h3>
+            <span class="section-count">${stepCount} steps</span>
+          </div>
+          ${execHtml}
         </div>
-        ${coreFns || '<p class="empty-state">No core functions defined.</p>'}
       </div>
 
-      <div class="section-block">
-        <div class="section-title">
-          <h3>◈ Supporting Functions</h3>
-          <span class="section-count">${suppCount}</span>
+      <div class="phase-tab-pane" id="${tabId}-code">
+        <div class="section-block">
+          <div class="section-title">
+            <h3>{ } Code Example</h3>
+          </div>
+          ${codeHtml}
         </div>
-        ${suppFns || '<p class="empty-state">No supporting functions defined.</p>'}
       </div>
 
-      <div class="section-block">
-        <div class="section-title">
-          <h3>↳ Execution Order</h3>
-          <span class="section-count">${stepCount} steps</span>
+      <div class="phase-tab-pane" id="${tabId}-integ">
+        <div class="section-block">
+          <div class="section-title">
+            <h3>⇄ Integration Context</h3>
+          </div>
+          ${integHtml}
         </div>
-        ${execHtml}
       </div>
 
-      <div class="section-block">
-        <div class="section-title">
-          <h3>{ } Code Example</h3>
+      <div class="phase-tab-pane" id="${tabId}-traps">
+        <div class="section-block">
+          <div class="section-title">
+            <h3>⚠ Common Mistakes</h3>
+            <span class="section-count">${trapCount}</span>
+          </div>
+          ${mistakeHtml}
         </div>
-        ${codeHtml}
-      </div>
-
-      <div class="section-block">
-        <div class="section-title">
-          <h3>⇄ Integration Context</h3>
-        </div>
-        ${integHtml}
-      </div>
-
-      <div class="section-block">
-        <div class="section-title">
-          <h3>⚠ Common Mistakes</h3>
-          <span class="section-count">${trapCount}</span>
-        </div>
-        ${mistakeHtml}
       </div>
 
       <div class="phase-nav">
@@ -3027,7 +3164,9 @@
         const coreFnItems = coreFns.map(f => `
     <div class="sidebar-fn-item"
          data-fn="${escHtml(f.name)}"
-         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}')">
+         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}'); setActiveSidebarFn('${escHtml(f.name)}')"
+         onmouseenter="this.classList.add('hovered')"
+         onmouseleave="this.classList.remove('hovered')">
       <span class="sidebar-fn-dot"></span>
       ${escHtml(f.name)}
     </div>`).join('');
@@ -3035,7 +3174,9 @@
         const suppFnItems = suppFns.map(f => `
     <div class="sidebar-fn-item"
          data-fn="${escHtml(f.name)}"
-         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}')">
+         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}'); setActiveSidebarFn('${escHtml(f.name)}')"
+         onmouseenter="this.classList.add('hovered')"
+         onmouseleave="this.classList.remove('hovered')">
       <span class="sidebar-fn-dot"></span>
       ${escHtml(f.name)}
     </div>`).join('');
@@ -3065,6 +3206,16 @@
         ${suppFnGroup}
       </div>
     </div>`;
+    }
+
+    function setActiveSidebarFn(fnName) {
+        document.querySelectorAll('.sidebar-fn-item').forEach(el =>
+            el.classList.remove('active')
+        );
+        const sideItem = document.querySelector(
+            `.sidebar-fn-item[data-fn="${fnName}"]`
+        );
+        if (sideItem) sideItem.classList.add('active');
     }
 
     function slugify(str) {
@@ -3146,14 +3297,12 @@
         setTimeout(() => {
             const card = document.getElementById(`fn-${fnSlug}`);
             if (card) {
-                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                document.querySelectorAll('.sidebar-fn-item').forEach(el =>
-                    el.classList.remove('active')
-                );
-                const sideItem = document.querySelector(
-                    `.sidebar-fn-item[data-fn="${card.dataset.fnName}"]`
-                );
-                if (sideItem) sideItem.classList.add('active');
+                switchTab(`tabs-${slug}`, 'fns');
+                setTimeout(() => {
+                    card.classList.add('expanded');
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setActiveSidebarFn(card.dataset.fnName);
+                }, 80);
             }
         }, 80);
     }
@@ -3166,6 +3315,32 @@
     function toggleSidebarPhase(slug) {
         const phase = document.getElementById(`sidebar-phase-${slug}`);
         if (phase) phase.classList.toggle('open');
+    }
+
+    function switchTab(tabId, pane) {
+        const tabBar = document.getElementById(tabId);
+        if (!tabBar) return;
+
+        // Deactivate all tabs in this bar
+        tabBar.querySelectorAll('.phase-tab').forEach(btn => btn.classList.remove('active'));
+
+        // Deactivate all panes belonging to this tab group
+        const paneIds = ['fns', 'exec', 'code', 'integ', 'traps'];
+        paneIds.forEach(p => {
+            const el = document.getElementById(`${tabId}-${p}`);
+            if (el) el.classList.remove('active');
+        });
+
+        // Activate selected tab button
+        const activeBtn = tabBar.querySelector(`[onclick*="'${pane}'"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        // Activate selected pane
+        const activePane = document.getElementById(`${tabId}-${pane}`);
+        if (activePane) activePane.classList.add('active');
+
+        // Scroll main panel back to top of content
+        document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function openSidebarPhase(slug) {
@@ -3324,42 +3499,6 @@
             document.activeElement.blur();
         }
     });
-
-    /* Track active function while scrolling */
-    (function() {
-        const mainEl = document.getElementById('main');
-        if (!mainEl) return;
-
-        let scrollTimer = null;
-
-        mainEl.addEventListener('scroll', () => {
-            if (scrollTimer) clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(() => {
-                const cards    = document.querySelectorAll('.fn-card');
-                const mainRect = mainEl.getBoundingClientRect();
-                let closestCard = null;
-                let closestDist = Infinity;
-
-                cards.forEach(card => {
-                    const rect = card.getBoundingClientRect();
-                    const dist = Math.abs(rect.top - mainRect.top - 80);
-                    if (dist < closestDist) {
-                        closestDist = dist;
-                        closestCard = card;
-                    }
-                });
-
-                if (closestCard) {
-                    const fnName = closestCard.dataset.fnName;
-                    document.querySelectorAll('.sidebar-fn-item').forEach(item => {
-                        const match = item.dataset.fn === fnName;
-                        item.classList.toggle('active', match);
-                        if (match) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                    });
-                }
-            }, 80);
-        });
-    })();
 
 </script>
 
@@ -4010,7 +4149,7 @@
         initTooltipA11y();
         initTitleSync();
         initSidebarShortcut();
-        initKeyboardHelp();
+        // initKeyboardHelp();
         initMobileCodeThemePicker();
     });
 
