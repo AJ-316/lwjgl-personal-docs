@@ -1,0 +1,3910 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-code-theme="github-dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenGL Pipeline — LWJGL / Java</title>
+    <script src="pipeline_data.js"></script>
+    <style>
+
+        /* ═══════════════════════════════════════════════════════
+           STEP A — CSS CUSTOM PROPERTIES (TOKENS)
+           All colours, sizes, and transitions defined here.
+           Dark theme is default. Light theme overrides below.
+        ═══════════════════════════════════════════════════════ */
+
+        /* ── Dark theme (default) ─────────────────────────────── */
+        :root,
+        [data-theme="dark"] {
+            --bg-base:          #0d0f14;
+            --bg-surface:       #13161e;
+            --bg-elevated:      #161922;
+            --bg-hover:         #1c2030;
+
+            --border:           #232638;
+            --border-accent:    #89b4fa;
+
+            --text-primary:     #cdd6f4;
+            --text-secondary:   #6c7086;
+            --text-muted:       #45475a;
+            --text-inverse:     #0d0f14;
+
+            --accent:           #89b4fa;
+            --accent-hover:     #b4ccff;
+            --accent-glow:      rgba(137, 180, 250, 0.12);
+
+            --green:            #a6e3a1;
+            --red:              #f38ba8;
+            --yellow:           #f9e2af;
+            --purple:           #cba6f7;
+            --cyan:             #89dceb;
+            --orange:           #fab387;
+
+            --badge-core-bg:    rgba(137, 180, 250, 0.12);
+            --badge-core-text:  #89b4fa;
+            --badge-supp-bg:    rgba(166, 227, 161, 0.12);
+            --badge-supp-text:  #a6e3a1;
+            --badge-warn-bg:    rgba(243, 139, 168, 0.12);
+            --badge-warn-text:  #f38ba8;
+
+            --shadow-sm:        0 2px 8px rgba(0,0,0,0.4);
+            --shadow-md:        0 4px 20px rgba(0,0,0,0.5);
+            --shadow-glow:      0 0 0 2px var(--accent-glow);
+
+            --sidebar-width:    280px;
+            --topbar-height:    56px;
+            --radius-sm:        6px;
+            --radius-md:        10px;
+            --radius-lg:        14px;
+
+            --transition-fast:  150ms ease;
+            --transition-mid:   250ms ease;
+            --transition-slow:  400ms ease;
+
+            --font-sans:        'DM Sans', 'Inter', 'Segoe UI', system-ui, sans-serif;
+            --font-mono:        'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+
+        /* ── Light theme override ─────────────────────────────── */
+        [data-theme="light"] {
+            --bg-base:          #f5f6fa;
+            --bg-surface:       #ffffff;
+            --bg-elevated:      #ffffff;
+            --bg-hover:         #e8eaf2;
+
+            --border:           #d8dae8;
+            --border-accent:    #2563eb;
+
+            --text-primary:     #1e2040;
+            --text-secondary:   #6b7280;
+            --text-muted:       #9ca3af;
+            --text-inverse:     #ffffff;
+
+            --accent:           #2563eb;
+            --accent-hover:     #1d4ed8;
+            --accent-glow:      rgba(37, 99, 235, 0.08);
+
+            --green:            #16a34a;
+            --red:              #dc2626;
+            --yellow:           #d97706;
+            --purple:           #7c3aed;
+            --cyan:             #0891b2;
+            --orange:           #ea580c;
+
+            --badge-core-bg:    rgba(37, 99, 235, 0.08);
+            --badge-core-text:  #2563eb;
+            --badge-supp-bg:    rgba(22, 163, 74, 0.08);
+            --badge-supp-text:  #16a34a;
+            --badge-warn-bg:    rgba(220, 38, 38, 0.08);
+            --badge-warn-text:  #dc2626;
+
+            --shadow-sm:        0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md:        0 4px 20px rgba(0,0,0,0.12);
+            --shadow-glow:      0 0 0 2px var(--accent-glow);
+        }
+
+        /* ── Reset & base ─────────────────────────────────────── */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 15px;
+        }
+
+        body {
+            font-family:      var(--font-sans);
+            background-color: var(--bg-base);
+            color:            var(--text-primary);
+            line-height:      1.6;
+            transition:
+                    background-color var(--transition-mid),
+                    color            var(--transition-mid);
+            overflow-x: hidden;
+        }
+
+        /* ── Typography scale ─────────────────────────────────── */
+        h1 { font-size: 1.5rem;  font-weight: 700; letter-spacing: -0.02em; }
+        h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+        h3 { font-size: 1.05rem; font-weight: 600; }
+        h4 { font-size: 0.9rem;  font-weight: 600; }
+
+        p, li {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        code, pre {
+            font-family: var(--font-mono);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* ── Scrollbar styling ────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background:    var(--border);
+            border-radius: 99px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ── Focus ring ───────────────────────────────────────── */
+        :focus-visible {
+            outline:        2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius:  var(--radius-sm);
+        }
+
+        /* ── Selection ────────────────────────────────────────── */
+        ::selection {
+            background: var(--accent-glow);
+            color:      var(--text-primary);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+       STEP B — LAYOUT
+       Top bar, sidebar, main panel, scroll containers.
+    ═══════════════════════════════════════════════════════ */
+
+        /* ── App shell ────────────────────────────────────────── */
+        #app {
+            display:        grid;
+            grid-template-rows:    var(--topbar-height) 1fr;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-areas:
+        "topbar  topbar"
+        "sidebar main";
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Topbar ───────────────────────────────────────────── */
+        #topbar {
+            grid-area:       topbar;
+            display:         flex;
+            align-items:     center;
+            gap:             16px;
+            padding:         0 20px;
+            background:      var(--bg-surface);
+            border-bottom:   1px solid var(--border);
+            box-shadow:      var(--shadow-sm);
+            z-index:         100;
+            position:        sticky;
+            top:             0;
+        }
+
+        #topbar-title {
+            display:         flex;
+            align-items:     center;
+            gap:             10px;
+            flex-shrink:     0;
+            white-space:     nowrap;
+        }
+
+        #topbar-title h1 {
+            font-size:       1rem;
+            font-weight:     700;
+            color:           var(--text-primary);
+        }
+
+        #topbar-title .title-badge {
+            font-size:       0.7rem;
+            font-weight:     600;
+            font-family:     var(--font-mono);
+            color:           var(--badge-core-text);
+            background:      var(--badge-core-bg);
+            padding:         2px 8px;
+            border-radius:   99px;
+            border:          1px solid var(--border-accent);
+        }
+
+        #topbar-search-wrap {
+            flex:            1;
+            position:        relative;
+            max-width:       480px;
+        }
+
+        #topbar-search {
+            width:           100%;
+            padding:         7px 14px 7px 36px;
+            background:      var(--bg-elevated);
+            border:          1px solid var(--border);
+            border-radius:   var(--radius-md);
+            color:           var(--text-primary);
+            font-family:     var(--font-sans);
+            font-size:       0.875rem;
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast);
+            outline: none;
+        }
+
+        #topbar-search::placeholder {
+            color: var(--text-muted);
+        }
+
+        #topbar-search:focus {
+            border-color: var(--border-accent);
+            box-shadow:   var(--shadow-glow);
+        }
+
+        #search-icon {
+            position:    absolute;
+            left:        11px;
+            top:         50%;
+            transform:   translateY(-50%);
+            color:       var(--text-muted);
+            pointer-events: none;
+            font-size:   0.9rem;
+        }
+
+        #search-clear {
+            position:    absolute;
+            right:       10px;
+            top:         50%;
+            transform:   translateY(-50%);
+            background:  none;
+            border:      none;
+            color:       var(--text-muted);
+            cursor:      pointer;
+            font-size:   0.85rem;
+            padding:     2px 4px;
+            border-radius: var(--radius-sm);
+            display:     none;
+            transition:  color var(--transition-fast);
+        }
+
+        #search-clear:hover {
+            color: var(--text-primary);
+        }
+
+        #topbar-controls {
+            display:      flex;
+            align-items:  center;
+            gap:          8px;
+            flex-shrink:  0;
+            margin-left:  auto;
+        }
+
+        /* ── Sidebar ──────────────────────────────────────────── */
+        #sidebar {
+            grid-area:    sidebar;
+            display:      flex;
+            flex-direction: column;
+            background:   var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow:     hidden;
+            height:       calc(100vh - var(--topbar-height));
+            position:     sticky;
+            top:          var(--topbar-height);
+        }
+
+        #sidebar-header {
+            padding:         14px 16px 10px;
+            border-bottom:   1px solid var(--border);
+            flex-shrink:     0;
+        }
+
+        #sidebar-header-row {
+            display:         flex;
+            align-items:     center;
+            justify-content: space-between;
+            margin-bottom:   10px;
+        }
+
+        #sidebar-header-row h4 {
+            color:           var(--text-muted);
+            font-size:       0.7rem;
+            font-weight:     600;
+            letter-spacing:  0.08em;
+            text-transform:  uppercase;
+        }
+
+        #sidebar-search-wrap {
+            position:   relative;
+        }
+
+        #sidebar-search {
+            width:        100%;
+            padding:      6px 10px 6px 30px;
+            background:   var(--bg-elevated);
+            border:       1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color:        var(--text-primary);
+            font-family:  var(--font-sans);
+            font-size:    0.8rem;
+            outline:      none;
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast);
+        }
+
+        #sidebar-search::placeholder {
+            color: var(--text-muted);
+        }
+
+        #sidebar-search:focus {
+            border-color: var(--border-accent);
+            box-shadow:   var(--shadow-glow);
+        }
+
+        #sidebar-search-icon {
+            position:       absolute;
+            left:           9px;
+            top:            50%;
+            transform:      translateY(-50%);
+            color:          var(--text-muted);
+            pointer-events: none;
+            font-size:      0.78rem;
+        }
+
+        #sidebar-actions {
+            display:         flex;
+            gap:             6px;
+            margin-top:      8px;
+        }
+
+        #sidebar-nav {
+            flex:            1;
+            overflow-y:      auto;
+            padding:         8px 0 24px;
+        }
+
+        /* ── Main content panel ───────────────────────────────── */
+        #main {
+            grid-area:   main;
+            overflow-y:  auto;
+            height:      calc(100vh - var(--topbar-height));
+            padding:     32px 40px 80px;
+            scroll-behavior: smooth;
+        }
+
+        /* ── Phase content panels ─────────────────────────────── */
+        .phase-panel {
+            display:   none;
+            animation: fadeSlideIn var(--transition-mid) both;
+        }
+
+        .phase-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity:   0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity:   1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Phase header ─────────────────────────────────────── */
+        .phase-header {
+            display:         flex;
+            align-items:     flex-start;
+            gap:             16px;
+            margin-bottom:   32px;
+            padding-bottom:  24px;
+            border-bottom:   1px solid var(--border);
+        }
+
+        .phase-number {
+            font-size:       2rem;
+            font-weight:     800;
+            font-family:     var(--font-mono);
+            color:           var(--accent);
+            opacity:         0.4;
+            line-height:     1;
+            flex-shrink:     0;
+            min-width:       48px;
+            text-align:      right;
+        }
+
+        .phase-header-text h2 {
+            color:           var(--text-primary);
+            margin-bottom:   6px;
+        }
+
+        .phase-header-text p {
+            color:           var(--text-secondary);
+            font-size:       0.875rem;
+            max-width:       640px;
+        }
+
+        .phase-header-meta {
+            display:         flex;
+            gap:             8px;
+            margin-top:      10px;
+            flex-wrap:       wrap;
+        }
+
+        /* ── Section blocks inside a phase ───────────────────────*/
+        .section-block {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            display:         flex;
+            align-items:     center;
+            gap:             10px;
+            margin-bottom:   16px;
+            padding-bottom:  8px;
+            border-bottom:   1px solid var(--border);
+        }
+
+        .section-title h3 {
+            color:     var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .section-count {
+            font-size:    0.72rem;
+            font-weight:  600;
+            color:        var(--text-muted);
+            background:   var(--bg-elevated);
+            padding:      1px 7px;
+            border-radius: 99px;
+            border:       1px solid var(--border);
+        }
+
+        /* ── Phase nav (prev/next) ────────────────────────────── */
+        .phase-nav {
+            display:         flex;
+            justify-content: space-between;
+            align-items:     center;
+            margin-top:      48px;
+            padding-top:     24px;
+            border-top:      1px solid var(--border);
+            gap:             12px;
+        }
+
+        .phase-nav-btn {
+            display:      flex;
+            align-items:  center;
+            gap:          8px;
+            padding:      10px 18px;
+            background:   var(--bg-surface);
+            border:       1px solid var(--border);
+            border-radius: var(--radius-md);
+            color:        var(--text-secondary);
+            font-family:  var(--font-sans);
+            font-size:    0.85rem;
+            cursor:       pointer;
+            transition:
+                    background   var(--transition-fast),
+                    border-color var(--transition-fast),
+                    color        var(--transition-fast),
+                    box-shadow   var(--transition-fast);
+        }
+
+        .phase-nav-btn:hover {
+            background:   var(--bg-hover);
+            border-color: var(--border-accent);
+            color:        var(--text-primary);
+            box-shadow:   var(--shadow-sm);
+        }
+
+        .phase-nav-btn:disabled {
+            opacity: 0.3;
+            cursor:  not-allowed;
+        }
+
+        .phase-nav-btn:disabled:hover {
+            background:   var(--bg-surface);
+            border-color: var(--border);
+            color:        var(--text-secondary);
+            box-shadow:   none;
+        }
+
+        .phase-nav-label {
+            display:       flex;
+            flex-direction: column;
+            gap:           2px;
+        }
+
+        .phase-nav-hint {
+            font-size:  0.7rem;
+            color:      var(--text-muted);
+        }
+
+        .phase-nav-name {
+            font-size:  0.85rem;
+            font-weight: 600;
+            color:      var(--text-primary);
+        }
+
+        /* ── Scroll to top button ─────────────────────────────── */
+        #scroll-top {
+            position:     fixed;
+            bottom:       28px;
+            right:        28px;
+            width:        40px;
+            height:       40px;
+            background:   var(--accent);
+            color:        var(--text-inverse);
+            border:       none;
+            border-radius: 50%;
+            font-size:    1rem;
+            cursor:       pointer;
+            display:      flex;
+            align-items:  center;
+            justify-content: center;
+            box-shadow:   var(--shadow-md);
+            opacity:      0;
+            transform:    translateY(12px);
+            pointer-events: none;
+            transition:
+                    opacity    var(--transition-mid),
+                    transform  var(--transition-mid),
+                    background var(--transition-fast);
+            z-index: 90;
+        }
+
+        #scroll-top.visible {
+            opacity:        1;
+            transform:      translateY(0);
+            pointer-events: all;
+        }
+
+        #scroll-top:hover {
+            background: var(--accent-hover);
+        }
+
+        /* ── Search results dropdown ──────────────────────────── */
+        #search-results {
+            position:      absolute;
+            top:           calc(100% + 6px);
+            left:          0;
+            right:         0;
+            background:    var(--bg-surface);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow:    var(--shadow-md);
+            max-height:    420px;
+            overflow-y:    auto;
+            z-index:       200;
+            display:       none;
+        }
+
+        #search-results.open {
+            display: block;
+            animation: fadeSlideIn var(--transition-fast) both;
+        }
+
+        .search-results-header {
+            padding:       10px 14px 6px;
+            font-size:     0.72rem;
+            font-weight:   600;
+            color:         var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-result-item {
+            padding:       10px 14px;
+            cursor:        pointer;
+            border-bottom: 1px solid var(--border);
+            transition:    background var(--transition-fast);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .search-result-phase {
+            font-size:   0.7rem;
+            font-weight: 600;
+            color:       var(--accent);
+            margin-bottom: 2px;
+        }
+
+        .search-result-section {
+            font-size:   0.7rem;
+            color:       var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .search-result-text {
+            font-size:   0.82rem;
+            color:       var(--text-secondary);
+            white-space: nowrap;
+            overflow:    hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-result-text mark {
+            background:  var(--accent-glow);
+            color:       var(--accent);
+            border-radius: 2px;
+            padding:     0 1px;
+        }
+
+        .search-no-results {
+            padding:     24px 14px;
+            text-align:  center;
+            color:       var(--text-muted);
+            font-size:   0.85rem;
+        }
+
+        /* ── Pipeline overview panel ──────────────────────────── */
+        #overview-panel {
+            display: none;
+        }
+
+        #overview-panel.active {
+            display: block;
+            animation: fadeSlideIn var(--transition-mid) both;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+       STEP C — COMPONENTS
+       Cards, badges, tables, parameter rows,
+       execution steps, mistake cards, integration blocks,
+       code blocks, buttons, tooltips.
+    ═══════════════════════════════════════════════════════ */
+
+        /* ── Buttons (shared base) ────────────────────────────── */
+        .btn {
+            display:       inline-flex;
+            align-items:   center;
+            gap:           6px;
+            padding:       6px 14px;
+            border-radius: var(--radius-sm);
+            border:        1px solid var(--border);
+            background:    var(--bg-elevated);
+            color:         var(--text-secondary);
+            font-family:   var(--font-sans);
+            font-size:     0.8rem;
+            font-weight:   500;
+            cursor:        pointer;
+            transition:
+                    background    var(--transition-fast),
+                    border-color  var(--transition-fast),
+                    color         var(--transition-fast),
+                    box-shadow    var(--transition-fast);
+            white-space:   nowrap;
+        }
+
+        .btn:hover {
+            background:   var(--bg-hover);
+            border-color: var(--border-accent);
+            color:        var(--text-primary);
+        }
+
+        .btn-accent {
+            background:   var(--accent);
+            border-color: var(--accent);
+            color:        var(--text-inverse);
+        }
+
+        .btn-accent:hover {
+            background:   var(--accent-hover);
+            border-color: var(--accent-hover);
+            color:        var(--text-inverse);
+        }
+
+        .btn-ghost {
+            background:   transparent;
+            border-color: transparent;
+            color:        var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            background:   var(--bg-elevated);
+            border-color: var(--border);
+            color:        var(--text-primary);
+        }
+
+        .btn-icon {
+            padding:       6px 8px;
+        }
+
+        /* ── Badges ───────────────────────────────────────────── */
+        .badge {
+            display:       inline-flex;
+            align-items:   center;
+            gap:           4px;
+            padding:       2px 9px;
+            border-radius: 99px;
+            font-size:     0.7rem;
+            font-weight:   600;
+            letter-spacing: 0.03em;
+            white-space:   nowrap;
+        }
+
+        .badge-core {
+            background: var(--badge-core-bg);
+            color:      var(--badge-core-text);
+            border:     1px solid var(--badge-core-text);
+        }
+
+        .badge-supporting {
+            background: var(--badge-supp-bg);
+            color:      var(--badge-supp-text);
+            border:     1px solid var(--badge-supp-text);
+        }
+
+        .badge-warn {
+            background: var(--badge-warn-bg);
+            color:      var(--badge-warn-text);
+            border:     1px solid var(--badge-warn-text);
+        }
+
+        .badge-neutral {
+            background: var(--bg-elevated);
+            color:      var(--text-muted);
+            border:     1px solid var(--border);
+        }
+
+        .badge-phase {
+            background: var(--bg-elevated);
+            color:      var(--accent);
+            border:     1px solid var(--border-accent);
+            font-family: var(--font-mono);
+        }
+
+        /* ── Function cards ───────────────────────────────────── */
+        .fn-card {
+            background:    var(--bg-surface);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 14px;
+            overflow:      visible;
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast),
+                    transform    var(--transition-fast);
+        }
+
+        .fn-card:hover {
+            border-color: var(--border-accent);
+            box-shadow:   var(--shadow-glow), var(--shadow-sm);
+            transform:    translateY(-1px);
+        }
+
+        .fn-card-header {
+            display:         flex;
+            align-items:     flex-start;
+            justify-content: space-between;
+            gap:             12px;
+            padding:         14px 16px 10px;
+            cursor:          pointer;
+            user-select:     none;
+        }
+
+        .fn-card-header-left {
+            display:        flex;
+            flex-direction: column;
+            gap:            5px;
+            flex:           1;
+            min-width:      0;
+        }
+
+        .fn-name-row {
+            display:     flex;
+            align-items: center;
+            gap:         10px;
+            flex-wrap:   wrap;
+        }
+
+        .fn-name {
+            font-family:  var(--font-mono);
+            font-size:    0.9rem;
+            font-weight:  700;
+            color:        var(--accent);
+            word-break:   break-all;
+        }
+
+        /* Tooltip anchor — signature shown on hover, not repeated in body */
+        .fn-name-wrap {
+            position:    relative;
+            display:     inline-flex;
+            align-items: center;
+            gap:         6px;
+        }
+
+        .fn-signature-tooltip {
+            position:      absolute;
+            bottom:        calc(100% + 8px);
+            left:          0;
+            background:    var(--bg-elevated);
+            border:        1px solid var(--border-accent);
+            border-radius: var(--radius-sm);
+            padding:       6px 12px;
+            font-family:   var(--font-mono);
+            font-size:     0.75rem;
+            color:         var(--cyan);
+            white-space:   nowrap;
+            box-shadow:    var(--shadow-md);
+            pointer-events: none;
+            opacity:       0;
+            transform:     translateY(4px);
+            transition:
+                    opacity   var(--transition-fast),
+                    transform var(--transition-fast);
+            z-index:       100;
+            max-width:     max-content;
+        }
+
+        .fn-signature-tooltip::after {
+            content:       '';
+            position:      absolute;
+            top:           100%;
+            left:          16px;
+            border:        5px solid transparent;
+            border-top-color: var(--border-accent);
+        }
+
+        .fn-name-wrap:hover .fn-signature-tooltip {
+            opacity:   1;
+            transform: translateY(0);
+        }
+
+        .fn-returns {
+            font-family:  var(--font-mono);
+            font-size:    0.75rem;
+            color:        var(--green);
+        }
+
+        .fn-description {
+            font-size:    0.85rem;
+            color:        var(--text-secondary);
+            line-height:  1.5;
+            margin-top:   2px;
+        }
+
+        .fn-card-toggle {
+            color:        var(--text-muted);
+            font-size:    0.75rem;
+            flex-shrink:  0;
+            margin-top:   3px;
+            transition:   transform var(--transition-fast);
+        }
+
+        .fn-card.expanded .fn-card-toggle {
+            transform: rotate(180deg);
+        }
+
+        .fn-card-body {
+            border-top:   1px solid var(--border);
+            padding:      16px;
+            display:      none;
+            overflow:     hidden;
+        }
+
+        .fn-card.expanded .fn-card-body {
+            display: block;
+            animation: fadeSlideIn var(--transition-fast) both;
+        }
+
+        /* ── Parameter table ──────────────────────────────────── */
+        .param-table {
+            width:           100%;
+            border-collapse: collapse;
+            margin-bottom:   16px;
+            font-size:       0.82rem;
+        }
+
+        .param-table thead tr {
+            background:    var(--bg-elevated);
+        }
+
+        .param-table th {
+            padding:       7px 12px;
+            text-align:    left;
+            font-size:     0.72rem;
+            font-weight:   600;
+            color:         var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            white-space:   nowrap;
+        }
+
+        .param-table td {
+            padding:       9px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            color:         var(--text-secondary);
+            line-height:   1.5;
+        }
+
+        .param-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .param-table tr:hover td {
+            background: var(--bg-elevated);
+        }
+
+        .param-name {
+            font-family:  var(--font-mono);
+            font-size:    0.8rem;
+            color:        var(--yellow);
+            white-space:  nowrap;
+        }
+
+        .param-type {
+            font-family:  var(--font-mono);
+            font-size:    0.78rem;
+            color:        var(--purple);
+        }
+
+        .param-value {
+            font-family:  var(--font-mono);
+            font-size:    0.78rem;
+            color:        var(--orange);
+        }
+
+        /* Alternatives expand — hover to reveal, no tooltip repeat */
+        .param-alternatives {
+            margin-top:    6px;
+            overflow:      hidden;
+            max-height:    0;
+            transition:    max-height var(--transition-mid);
+        }
+
+        .param-row:hover .param-alternatives,
+        .param-alternatives:focus-within {
+            max-height: 300px;
+        }
+
+        .param-alt-label {
+            font-size:    0.7rem;
+            font-weight:  600;
+            color:        var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            margin-top:   6px;
+        }
+
+        .param-alt-item {
+            display:       flex;
+            gap:           8px;
+            align-items:   flex-start;
+            padding:       3px 0;
+            font-size:     0.78rem;
+        }
+
+        .param-alt-const {
+            font-family:  var(--font-mono);
+            color:        var(--cyan);
+            flex-shrink:  0;
+            min-width:    160px;
+        }
+
+        .param-alt-when {
+            color:        var(--text-muted);
+        }
+
+        /* ── Example call block ───────────────────────────────── */
+        .example-call-wrap {
+            position:     relative;
+            margin-top:   12px;
+        }
+
+        .example-call-label {
+            font-size:    0.7rem;
+            font-weight:  600;
+            color:        var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        /* ── Execution order list ─────────────────────────────── */
+        .exec-list {
+            display:        flex;
+            flex-direction: column;
+            gap:            6px;
+        }
+
+        .exec-step {
+            display:       flex;
+            gap:           14px;
+            align-items:   flex-start;
+            padding:       10px 14px;
+            background:    var(--bg-surface);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition:
+                    border-color var(--transition-fast),
+                    background   var(--transition-fast);
+        }
+
+        .exec-step:hover {
+            border-color: var(--border-accent);
+            background:   var(--bg-elevated);
+        }
+
+        .exec-step-num {
+            font-family:  var(--font-mono);
+            font-size:    0.78rem;
+            font-weight:  700;
+            color:        var(--accent);
+            opacity:      0.6;
+            flex-shrink:  0;
+            min-width:    28px;
+            padding-top:  1px;
+            transition:   opacity var(--transition-fast);
+        }
+
+        .exec-step:hover .exec-step-num {
+            opacity: 1;
+        }
+
+        .exec-step-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .exec-step-call {
+            font-family:  var(--font-mono);
+            font-size:    0.82rem;
+            color:        var(--cyan);
+            margin-bottom: 3px;
+            word-break:   break-all;
+        }
+
+        .exec-step-reason {
+            font-size:    0.8rem;
+            color:        var(--text-muted);
+            line-height:  1.5;
+        }
+
+        /* ── Code example block ───────────────────────────────── */
+        .code-example-wrap {
+            background:    var(--bg-surface);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow:      hidden;
+        }
+
+        .code-example-meta {
+            display:         flex;
+            align-items:     center;
+            justify-content: space-between;
+            gap:             12px;
+            padding:         10px 16px;
+            border-bottom:   1px solid var(--border);
+            background:      var(--bg-elevated);
+        }
+
+        .code-location-badge {
+            font-family:   var(--font-mono);
+            font-size:     0.72rem;
+            color:         var(--text-muted);
+            background:    var(--bg-base);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding:       2px 10px;
+        }
+
+        .code-description {
+            font-size:    0.82rem;
+            color:        var(--text-secondary);
+            padding:      10px 16px 12px;
+            border-bottom: 1px solid var(--border);
+            line-height:  1.5;
+        }
+
+        .code-block-wrap {
+            position:     relative;
+        }
+
+        .copy-btn {
+            position:     absolute;
+            top:          10px;
+            right:        10px;
+            padding:      4px 10px;
+            background:   var(--bg-elevated);
+            border:       1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color:        var(--text-muted);
+            font-family:  var(--font-sans);
+            font-size:    0.72rem;
+            cursor:       pointer;
+            opacity:      0;
+            transition:
+                    opacity      var(--transition-fast),
+                    background   var(--transition-fast),
+                    color        var(--transition-fast);
+        }
+
+        .code-block-wrap:hover .copy-btn {
+            opacity: 1;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            color:      var(--text-inverse);
+            border-color: var(--accent);
+        }
+
+        .copy-btn.copied {
+            background:   var(--green);
+            color:        var(--text-inverse);
+            border-color: var(--green);
+            opacity:      1;
+        }
+
+        pre {
+            margin:       0;
+            padding:      20px;
+            overflow-x:   auto;
+            font-size:    0.82rem;
+            line-height:  1.7;
+            tab-size:     4;
+        }
+
+        pre code {
+            font-family:  var(--font-mono);
+            white-space:  pre;
+        }
+
+        /* ── Integration context blocks ──────────────────────── */
+        .integration-grid {
+            display:               grid;
+            grid-template-columns: 1fr;
+            gap:                   12px;
+        }
+
+        .integration-block {
+            padding:       14px 16px;
+            border-radius: var(--radius-md);
+            border:        1px solid var(--border);
+            background:    var(--bg-surface);
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast);
+        }
+
+        .integration-block:hover {
+            border-color: var(--border-accent);
+            box-shadow:   var(--shadow-sm);
+        }
+
+        .integration-block-label {
+            display:       flex;
+            align-items:   center;
+            gap:           8px;
+            font-size:     0.72rem;
+            font-weight:   700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 8px;
+        }
+
+        .integration-block-label .dot {
+            width:         8px;
+            height:        8px;
+            border-radius: 50%;
+            flex-shrink:   0;
+        }
+
+        .integration-fits .dot   { background: var(--accent); }
+        .integration-after .dot  { background: var(--green); }
+        .integration-before .dot { background: var(--yellow); }
+
+        .integration-fits .integration-block-label   { color: var(--accent); }
+        .integration-after .integration-block-label  { color: var(--green); }
+        .integration-before .integration-block-label { color: var(--yellow); }
+
+        .integration-block p {
+            font-size:   0.85rem;
+            color:       var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── Mistake cards ────────────────────────────────────── */
+        .mistake-card {
+            border:        1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 10px;
+            overflow:      hidden;
+            background:    var(--bg-surface);
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast);
+        }
+
+        .mistake-card:hover {
+            border-color: var(--red);
+            box-shadow:   0 0 0 2px rgba(240, 107, 107, 0.1), var(--shadow-sm);
+        }
+
+        .mistake-trap {
+            display:      flex;
+            align-items:  flex-start;
+            gap:          10px;
+            padding:      12px 16px;
+        }
+
+        .mistake-icon {
+            font-size:    0.9rem;
+            flex-shrink:  0;
+            margin-top:   1px;
+        }
+
+        .mistake-trap-text {
+            font-size:    0.88rem;
+            font-weight:  600;
+            color:        var(--text-primary);
+            line-height:  1.4;
+        }
+
+        .mistake-details {
+            border-top:  1px solid var(--border);
+            padding:     12px 16px;
+            display:     grid;
+            gap:         10px;
+        }
+
+        .mistake-row {
+            display: flex;
+            gap:     10px;
+            align-items: flex-start;
+        }
+
+        .mistake-row-label {
+            font-size:    0.7rem;
+            font-weight:  700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            flex-shrink:  0;
+            min-width:    70px;
+            padding-top:  2px;
+        }
+
+        .mistake-symptom-label { color: var(--yellow); }
+        .mistake-fix-label     { color: var(--green);  }
+
+        .mistake-row-text {
+            font-size:   0.83rem;
+            color:       var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ── Pipeline overview cards ──────────────────────────── */
+        .overview-grid {
+            display:               grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap:                   14px;
+            margin-top:            24px;
+        }
+
+        .overview-card {
+            background:    var(--bg-surface);
+            border:        1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding:       16px;
+            cursor:        pointer;
+            transition:
+                    border-color var(--transition-fast),
+                    box-shadow   var(--transition-fast),
+                    transform    var(--transition-fast);
+        }
+
+        .overview-card:hover {
+            border-color: var(--border-accent);
+            box-shadow:   var(--shadow-glow), var(--shadow-sm);
+            transform:    translateY(-2px);
+        }
+
+        .overview-card-num {
+            font-family:   var(--font-mono);
+            font-size:     0.72rem;
+            font-weight:   700;
+            color:         var(--accent);
+            opacity:       0.6;
+            margin-bottom: 6px;
+        }
+
+        .overview-card-name {
+            font-size:     0.95rem;
+            font-weight:   700;
+            color:         var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .overview-card-summary {
+            font-size:     0.8rem;
+            color:         var(--text-muted);
+            line-height:   1.5;
+            margin-bottom: 12px;
+        }
+
+        .overview-card-calls {
+            display:   flex;
+            flex-wrap: wrap;
+            gap:       4px;
+        }
+
+        .overview-call-pill {
+            font-family:   var(--font-mono);
+            font-size:     0.68rem;
+            color:         var(--cyan);
+            background:    var(--bg-elevated);
+            border:        1px solid var(--border);
+            border-radius: 99px;
+            padding:       1px 8px;
+        }
+
+        /* ── Sidebar accordion ────────────────────────────────── */
+        .sidebar-phase {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-phase-header {
+            display:         flex;
+            align-items:     center;
+            gap:             10px;
+            padding:         10px 16px;
+            cursor:          pointer;
+            user-select:     none;
+            transition:      background var(--transition-fast);
+        }
+
+        .sidebar-phase-header:hover {
+            background: var(--bg-elevated);
+        }
+
+        .sidebar-phase-header.active {
+            background:    var(--bg-elevated);
+            border-left:   3px solid var(--accent);
+            padding-left:  13px;
+        }
+
+        .sidebar-phase-num {
+            font-family:  var(--font-mono);
+            font-size:    0.7rem;
+            font-weight:  700;
+            color:        var(--accent);
+            opacity:      0.5;
+            flex-shrink:  0;
+            min-width:    20px;
+        }
+
+        .sidebar-phase-name {
+            font-size:    0.82rem;
+            font-weight:  600;
+            color:        var(--text-secondary);
+            flex:         1;
+            min-width:    0;
+            overflow:     hidden;
+            text-overflow: ellipsis;
+            white-space:  nowrap;
+        }
+
+        .sidebar-phase-header.active .sidebar-phase-name {
+            color: var(--text-primary);
+        }
+
+        .sidebar-phase-header.active .sidebar-phase-num {
+            opacity: 1;
+        }
+
+        .sidebar-phase-chevron {
+            font-size:    0.65rem;
+            color:        var(--text-muted);
+            flex-shrink:  0;
+            transition:   transform var(--transition-fast);
+        }
+
+        .sidebar-phase.open .sidebar-phase-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-phase-body {
+            max-height:  0;
+            overflow:    hidden;
+            transition:  max-height var(--transition-mid);
+        }
+
+        .sidebar-phase.open .sidebar-phase-body {
+            max-height: 600px;
+        }
+
+        .sidebar-fn-group {
+            padding:     6px 0;
+        }
+
+        .sidebar-fn-group-label {
+            padding:       4px 16px 4px 32px;
+            font-size:     0.67rem;
+            font-weight:   700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color:         var(--text-muted);
+        }
+
+        .sidebar-fn-item {
+            display:       flex;
+            align-items:   center;
+            gap:           8px;
+            padding:       5px 16px 5px 32px;
+            font-family:   var(--font-mono);
+            font-size:     0.75rem;
+            color:         var(--text-muted);
+            cursor:        pointer;
+            border-left:   3px solid transparent;
+            transition:
+                    background   var(--transition-fast),
+                    color        var(--transition-fast),
+                    border-color var(--transition-fast);
+            white-space:   nowrap;
+            overflow:      hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-fn-item:hover {
+            background:    var(--bg-elevated);
+            color:         var(--text-primary);
+            border-left-color: var(--border-accent);
+        }
+
+        .sidebar-fn-item.active {
+            color:         var(--accent);
+            background:    var(--badge-core-bg);
+            border-left-color: var(--accent);
+        }
+
+        .sidebar-fn-dot {
+            width:       5px;
+            height:      5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background:  currentColor;
+            opacity:     0.5;
+        }
+
+        /* ── Overview sidebar item ────────────────────────────── */
+        .sidebar-overview-item {
+            display:     flex;
+            align-items: center;
+            gap:         10px;
+            padding:     10px 16px;
+            cursor:      pointer;
+            font-size:   0.82rem;
+            font-weight: 600;
+            color:       var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            transition:  background var(--transition-fast), color var(--transition-fast);
+        }
+
+        .sidebar-overview-item:hover {
+            background: var(--bg-elevated);
+            color:      var(--text-primary);
+        }
+
+        .sidebar-overview-item.active {
+            background:  var(--bg-elevated);
+            color:       var(--accent);
+            border-left: 3px solid var(--accent);
+            padding-left: 13px;
+        }
+
+        /* ── Highlighted search text ──────────────────────────── */
+        .highlight {
+            background:    var(--accent-glow);
+            color:         var(--accent);
+            border-radius: 2px;
+            padding:       0 2px;
+        }
+
+        /* ── Empty state ──────────────────────────────────────── */
+        .empty-state {
+            text-align:  center;
+            padding:     40px 20px;
+            color:       var(--text-muted);
+            font-size:   0.875rem;
+        }
+
+        .empty-state-icon {
+            font-size:     2rem;
+            margin-bottom: 12px;
+            opacity:       0.4;
+        }
+
+        /* ── Divider ──────────────────────────────────────────── */
+        .divider {
+            height:     1px;
+            background: var(--border);
+            margin:     20px 0;
+        }
+
+        /* ── Responsive: collapse sidebar on narrow screens ────── */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 0px;
+            }
+
+            #sidebar {
+                position:   fixed;
+                left:       -280px;
+                width:      280px;
+                z-index:    150;
+                transition: left var(--transition-mid);
+                height:     calc(100vh - var(--topbar-height));
+                top:        var(--topbar-height);
+            }
+
+            #sidebar.open {
+                left: 0;
+                box-shadow: var(--shadow-md);
+            }
+
+            #main {
+                padding: 20px 16px 60px;
+            }
+
+            #app {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+          "topbar"
+          "main";
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════
+       STEP D — CODE BLOCK THEMES
+       Five themes applied via [data-code-theme] on <html>.
+       Each theme styles: pre background, default text,
+       and token classes: .tok-keyword, .tok-string,
+       .tok-comment, .tok-number, .tok-type, .tok-fn,
+       .tok-var, .tok-operator, .tok-annotation
+    ═══════════════════════════════════════════════════════ */
+
+        /* ── Shared pre/code base ─────────────────────────────── */
+        .code-example-wrap pre,
+        .fn-card pre {
+            border-radius: 0;
+            margin:        0;
+        }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 1 — GITHUB DARK (default dark)
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="github-dark"] pre {
+            background: #0d1117;
+            color:      #e6edf3;
+        }
+
+        [data-code-theme="github-dark"] .tok-keyword    { color: #ff7b72; font-weight: 600; }
+        [data-code-theme="github-dark"] .tok-string     { color: #a5d6ff; }
+        [data-code-theme="github-dark"] .tok-comment    { color: #8b949e; font-style: italic; }
+        [data-code-theme="github-dark"] .tok-number     { color: #79c0ff; }
+        [data-code-theme="github-dark"] .tok-type       { color: #ffa657; }
+        [data-code-theme="github-dark"] .tok-fn         { color: #d2a8ff; }
+        [data-code-theme="github-dark"] .tok-var        { color: #e6edf3; }
+        [data-code-theme="github-dark"] .tok-operator   { color: #ff7b72; }
+        [data-code-theme="github-dark"] .tok-annotation { color: #ffa657; font-style: italic; }
+        [data-code-theme="github-dark"] .tok-constant   { color: #79c0ff; }
+        [data-code-theme="github-dark"] .tok-param      { color: #ffa657; }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 2 — DRACULA
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="dracula"] pre {
+            background: #282a36;
+            color:      #f8f8f2;
+        }
+
+        [data-code-theme="dracula"] .tok-keyword    { color: #ff79c6; font-weight: 600; }
+        [data-code-theme="dracula"] .tok-string     { color: #f1fa8c; }
+        [data-code-theme="dracula"] .tok-comment    { color: #6272a4; font-style: italic; }
+        [data-code-theme="dracula"] .tok-number     { color: #bd93f9; }
+        [data-code-theme="dracula"] .tok-type       { color: #8be9fd; }
+        [data-code-theme="dracula"] .tok-fn         { color: #50fa7b; }
+        [data-code-theme="dracula"] .tok-var        { color: #f8f8f2; }
+        [data-code-theme="dracula"] .tok-operator   { color: #ff79c6; }
+        [data-code-theme="dracula"] .tok-annotation { color: #ffb86c; font-style: italic; }
+        [data-code-theme="dracula"] .tok-constant   { color: #bd93f9; }
+        [data-code-theme="dracula"] .tok-param      { color: #ffb86c; }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 3 — ONE DARK
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="one-dark"] pre {
+            background: #282c34;
+            color:      #abb2bf;
+        }
+
+        [data-code-theme="one-dark"] .tok-keyword    { color: #c678dd; font-weight: 600; }
+        [data-code-theme="one-dark"] .tok-string     { color: #98c379; }
+        [data-code-theme="one-dark"] .tok-comment    { color: #5c6370; font-style: italic; }
+        [data-code-theme="one-dark"] .tok-number     { color: #d19a66; }
+        [data-code-theme="one-dark"] .tok-type       { color: #e5c07b; }
+        [data-code-theme="one-dark"] .tok-fn         { color: #61afef; }
+        [data-code-theme="one-dark"] .tok-var        { color: #abb2bf; }
+        [data-code-theme="one-dark"] .tok-operator   { color: #56b6c2; }
+        [data-code-theme="one-dark"] .tok-annotation { color: #e06c75; font-style: italic; }
+        [data-code-theme="one-dark"] .tok-constant   { color: #d19a66; }
+        [data-code-theme="one-dark"] .tok-param      { color: #e06c75; }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 4 — NORD
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="nord"] pre {
+            background: #2e3440;
+            color:      #d8dee9;
+        }
+
+        [data-code-theme="nord"] .tok-keyword    { color: #81a1c1; font-weight: 600; }
+        [data-code-theme="nord"] .tok-string     { color: #a3be8c; }
+        [data-code-theme="nord"] .tok-comment    { color: #616e88; font-style: italic; }
+        [data-code-theme="nord"] .tok-number     { color: #b48ead; }
+        [data-code-theme="nord"] .tok-type       { color: #8fbcbb; }
+        [data-code-theme="nord"] .tok-fn         { color: #88c0d0; }
+        [data-code-theme="nord"] .tok-var        { color: #d8dee9; }
+        [data-code-theme="nord"] .tok-operator   { color: #81a1c1; }
+        [data-code-theme="nord"] .tok-annotation { color: #ebcb8b; font-style: italic; }
+        [data-code-theme="nord"] .tok-constant   { color: #b48ead; }
+        [data-code-theme="nord"] .tok-param      { color: #d08770; }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 5 — SOLARIZED DARK
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="solarized-dark"] pre {
+            background: #002b36;
+            color:      #839496;
+        }
+
+        [data-code-theme="solarized-dark"] .tok-keyword    { color: #859900; font-weight: 600; }
+        [data-code-theme="solarized-dark"] .tok-string     { color: #2aa198; }
+        [data-code-theme="solarized-dark"] .tok-comment    { color: #586e75; font-style: italic; }
+        [data-code-theme="solarized-dark"] .tok-number     { color: #d33682; }
+        [data-code-theme="solarized-dark"] .tok-type       { color: #b58900; }
+        [data-code-theme="solarized-dark"] .tok-fn         { color: #268bd2; }
+        [data-code-theme="solarized-dark"] .tok-var        { color: #93a1a1; }
+        [data-code-theme="solarized-dark"] .tok-operator   { color: #859900; }
+        [data-code-theme="solarized-dark"] .tok-annotation { color: #cb4b16; font-style: italic; }
+        [data-code-theme="solarized-dark"] .tok-constant   { color: #cb4b16; }
+        [data-code-theme="solarized-dark"] .tok-param      { color: #b58900; }
+
+        /* ════════════════════════════════════════════════════════
+           THEME 6 — GITHUB LIGHT
+        ════════════════════════════════════════════════════════ */
+        [data-code-theme="github-light"] pre {
+            background: #ffffff;
+            color:      #24292f;
+        }
+
+        [data-code-theme="github-light"] .tok-keyword    { color: #cf222e; font-weight: 600; }
+        [data-code-theme="github-light"] .tok-string     { color: #0a3069; }
+        [data-code-theme="github-light"] .tok-comment    { color: #6e7781; font-style: italic; }
+        [data-code-theme="github-light"] .tok-number     { color: #0550ae; }
+        [data-code-theme="github-light"] .tok-type       { color: #953800; }
+        [data-code-theme="github-light"] .tok-fn         { color: #8250df; }
+        [data-code-theme="github-light"] .tok-var        { color: #24292f; }
+        [data-code-theme="github-light"] .tok-operator   { color: #cf222e; }
+        [data-code-theme="github-light"] .tok-annotation { color: #953800; font-style: italic; }
+        [data-code-theme="github-light"] .tok-constant   { color: #0550ae; }
+        [data-code-theme="github-light"] .tok-param      { color: #953800; }
+
+        /* ── Code theme switcher buttons ──────────────────────── */
+        .theme-btn-group {
+            display:   flex;
+            gap:       4px;
+            flex-wrap: wrap;
+        }
+
+        .code-theme-btn {
+            padding:       4px 10px;
+            border-radius: var(--radius-sm);
+            border:        1px solid var(--border);
+            background:    var(--bg-elevated);
+            color:         var(--text-muted);
+            font-family:   var(--font-mono);
+            font-size:     0.72rem;
+            cursor:        pointer;
+            transition:
+                    background    var(--transition-fast),
+                    border-color  var(--transition-fast),
+                    color         var(--transition-fast);
+            white-space:   nowrap;
+        }
+
+        .code-theme-btn:hover {
+            border-color: var(--border-accent);
+            color:        var(--text-primary);
+        }
+
+        .code-theme-btn.active {
+            background:   var(--accent);
+            border-color: var(--accent);
+            color:        var(--text-inverse);
+        }
+
+        /* ── Theme swatch dots on buttons ─────────────────────── */
+        .code-theme-btn::before {
+            content:       '';
+            display:       inline-block;
+            width:         7px;
+            height:        7px;
+            border-radius: 50%;
+            margin-right:  5px;
+            vertical-align: middle;
+        }
+
+        [data-code-theme-btn="github-dark"]::before    { background: #d2a8ff; }
+        [data-code-theme-btn="dracula"]::before        { background: #bd93f9; }
+        [data-code-theme-btn="one-dark"]::before       { background: #61afef; }
+        [data-code-theme-btn="nord"]::before           { background: #88c0d0; }
+        [data-code-theme-btn="solarized-dark"]::before { background: #268bd2; }
+        [data-code-theme-btn="github-light"]::before   { background: #8250df; }
+
+        /* ═══════════════════════════════════════════════════════
+       STEP E — ANIMATIONS & HOVER EFFECTS
+       All motion, transitions, keyframes, and
+       interactive state effects.
+    ═══════════════════════════════════════════════════════ */
+
+        /* ── Page-level transitions ───────────────────────────── */
+        * {
+            transition-property: background-color, border-color, color, box-shadow;
+            transition-duration: var(--transition-fast);
+            transition-timing-function: ease;
+        }
+
+        /* Exclude elements that should not transition colour */
+        pre, pre *,
+        .fn-card-body,
+        .sidebar-phase-body,
+        .param-alternatives {
+            transition: none;
+        }
+
+        /* ── Accordion open/close ─────────────────────────────── */
+        .sidebar-phase-body {
+            transition: max-height var(--transition-mid) cubic-bezier(0.4, 0, 0.2, 1);
+            overflow:   hidden;
+        }
+
+        .param-alternatives {
+            transition: max-height var(--transition-mid) cubic-bezier(0.4, 0, 0.2, 1);
+            overflow:   hidden;
+        }
+
+        /* ── Execution step number pulse on hover ─────────────── */
+        @keyframes stepPulse {
+            0%   { opacity: 0.6; transform: scale(1);    }
+            50%  { opacity: 1;   transform: scale(1.15); }
+            100% { opacity: 1;   transform: scale(1);    }
+        }
+
+        .exec-step:hover .exec-step-num {
+            animation: stepPulse 350ms ease both;
+        }
+
+        /* ── Function card lift ───────────────────────────────── */
+        .fn-card {
+            will-change: transform, box-shadow;
+        }
+
+        .fn-card:hover {
+            transform:  translateY(-2px);
+            box-shadow: var(--shadow-glow), 0 6px 24px rgba(0,0,0,0.3);
+        }
+
+        /* ── Overview card lift ───────────────────────────────── */
+        .overview-card {
+            will-change: transform;
+        }
+
+        .overview-card:hover {
+            transform:  translateY(-3px);
+            box-shadow: var(--shadow-glow), 0 8px 28px rgba(0,0,0,0.35);
+        }
+
+        /* ── Sidebar item left bar slide-in ──────────────────── */
+        .sidebar-fn-item {
+            position:   relative;
+            overflow:   hidden;
+        }
+
+        .sidebar-fn-item::before {
+            content:    '';
+            position:   absolute;
+            left:       0;
+            top:        0;
+            bottom:     0;
+            width:      3px;
+            background: var(--accent);
+            transform:  scaleY(0);
+            transition: transform var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+
+        .sidebar-fn-item:hover::before,
+        .sidebar-fn-item.active::before {
+            transform: scaleY(1);
+        }
+
+        /* ── Phase header accent line grow ────────────────────── */
+        @keyframes accentGrow {
+            from { transform: scaleX(0); }
+            to   { transform: scaleX(1); }
+        }
+
+        .phase-header {
+            position: relative;
+        }
+
+        .phase-header::after {
+            content:          '';
+            position:         absolute;
+            bottom:           -1px;
+            left:             0;
+            width:            60px;
+            height:           2px;
+            background:       var(--accent);
+            transform-origin: left center;
+            animation:        accentGrow var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        /* ── Topbar search focus glow pulse ───────────────────── */
+        @keyframes glowPulse {
+            0%   { box-shadow: 0 0 0 0px var(--accent-glow); }
+            50%  { box-shadow: 0 0 0 4px var(--accent-glow); }
+            100% { box-shadow: 0 0 0 2px var(--accent-glow); }
+        }
+
+        #topbar-search:focus {
+            animation: glowPulse 400ms ease forwards;
+        }
+
+        /* ── Search result item fade+slide in ────────────────── */
+        @keyframes resultItemIn {
+            from {
+                opacity:   0;
+                transform: translateX(-6px);
+            }
+            to {
+                opacity:   1;
+                transform: translateX(0);
+            }
+        }
+
+        .search-result-item {
+            animation: resultItemIn var(--transition-fast) both;
+        }
+
+        .search-result-item:nth-child(2)  { animation-delay: 20ms;  }
+        .search-result-item:nth-child(3)  { animation-delay: 40ms;  }
+        .search-result-item:nth-child(4)  { animation-delay: 60ms;  }
+        .search-result-item:nth-child(5)  { animation-delay: 80ms;  }
+        .search-result-item:nth-child(6)  { animation-delay: 100ms; }
+        .search-result-item:nth-child(7)  { animation-delay: 120ms; }
+        .search-result-item:nth-child(8)  { animation-delay: 140ms; }
+
+        /* ── Copy button flash ────────────────────────────────── */
+        @keyframes copyFlash {
+            0%   { background: var(--green); transform: scale(1);    }
+            30%  { background: var(--green); transform: scale(1.08); }
+            100% { background: var(--green); transform: scale(1);    }
+        }
+
+        .copy-btn.copied {
+            animation: copyFlash 300ms ease both;
+        }
+
+        /* ── Mistake card hover border glow ───────────────────── */
+        .mistake-card {
+            will-change: border-color, box-shadow;
+        }
+
+        /* ── Scroll to top button bounce in ──────────────────── */
+        @keyframes bounceIn {
+            0%   { transform: translateY(16px) scale(0.8); opacity: 0; }
+            60%  { transform: translateY(-4px) scale(1.05); opacity: 1; }
+            100% { transform: translateY(0)    scale(1);    opacity: 1; }
+        }
+
+        #scroll-top.visible {
+            animation: bounceIn 350ms cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        /* ── Integration block left border slide ─────────────── */
+        .integration-block {
+            position:           relative;
+            border-left-width:  3px;
+            border-left-style:  solid;
+            border-left-color:  transparent;
+            transition:
+                    border-left-color var(--transition-fast),
+                    box-shadow        var(--transition-fast);
+        }
+
+        .integration-fits:hover  { border-left-color: var(--accent); }
+        .integration-after:hover { border-left-color: var(--green);  }
+        .integration-before:hover { border-left-color: var(--yellow); }
+
+        /* ── Badge pop on mount ───────────────────────────────── */
+        @keyframes badgePop {
+            0%   { transform: scale(0.7); opacity: 0; }
+            70%  { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+
+        .phase-header-meta .badge {
+            animation: badgePop var(--transition-mid) cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        .phase-header-meta .badge:nth-child(2) { animation-delay: 50ms;  }
+        .phase-header-meta .badge:nth-child(3) { animation-delay: 100ms; }
+        .phase-header-meta .badge:nth-child(4) { animation-delay: 150ms; }
+
+        /* ── Sidebar active phase pulse border ───────────────── */
+        @keyframes borderPulse {
+            0%   { border-left-color: var(--accent); }
+            50%  { border-left-color: var(--accent-hover); }
+            100% { border-left-color: var(--accent); }
+        }
+
+        .sidebar-phase-header.active {
+            animation: borderPulse 2s ease infinite;
+        }
+
+        /* ── Theme switcher button scale ─────────────────────── */
+        .code-theme-btn {
+            transition:
+                    background    var(--transition-fast),
+                    border-color  var(--transition-fast),
+                    color         var(--transition-fast),
+                    transform     var(--transition-fast);
+        }
+
+        .code-theme-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .code-theme-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        /* ── Dark/light toggle spin ───────────────────────────── */
+        @keyframes spinIn {
+            from { transform: rotate(-90deg) scale(0.7); opacity: 0; }
+            to   { transform: rotate(0deg)   scale(1);   opacity: 1; }
+        }
+
+        #theme-toggle-icon {
+            display:        inline-block;
+            animation:      spinIn 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        /* ── Section block slide up on mount ─────────────────── */
+        @keyframes sectionIn {
+            from {
+                opacity:   0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity:   1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-block {
+            animation: sectionIn var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        .section-block:nth-child(1) { animation-delay: 0ms;   }
+        .section-block:nth-child(2) { animation-delay: 60ms;  }
+        .section-block:nth-child(3) { animation-delay: 120ms; }
+        .section-block:nth-child(4) { animation-delay: 180ms; }
+        .section-block:nth-child(5) { animation-delay: 240ms; }
+        .section-block:nth-child(6) { animation-delay: 300ms; }
+
+        /* ── Fn card expand chevron ───────────────────────────── */
+        .fn-card-toggle {
+            transition: transform var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Nav button arrow nudge ───────────────────────────── */
+        .phase-nav-btn:not(:disabled):hover .nav-arrow-left  {
+            animation: nudgeLeft  300ms ease both;
+        }
+
+        .phase-nav-btn:not(:disabled):hover .nav-arrow-right {
+            animation: nudgeRight 300ms ease both;
+        }
+
+        @keyframes nudgeLeft {
+            0%   { transform: translateX(0); }
+            40%  { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes nudgeRight {
+            0%   { transform: translateX(0); }
+            40%  { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* ── Sidebar collapse button rotation ────────────────── */
+        #sidebar-collapse-btn {
+            transition: transform var(--transition-mid);
+        }
+
+        #sidebar-collapse-btn.collapsed {
+            transform: rotate(180deg);
+        }
+
+        /* ── Mobile sidebar overlay ───────────────────────────── */
+        #sidebar-overlay {
+            display:    none;
+            position:   fixed;
+            inset:      0;
+            background: rgba(0,0,0,0.5);
+            z-index:    140;
+            opacity:    0;
+            transition: opacity var(--transition-mid);
+        }
+
+        #sidebar-overlay.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar-overlay {
+                display: block;
+            }
+        }
+
+        /* ── Param row hover highlight ────────────────────────── */
+        .param-row {
+            transition: background var(--transition-fast);
+            cursor:     default;
+        }
+
+        .param-row:hover {
+            background: var(--bg-elevated);
+        }
+
+        /* ── Skeleton loader (shown before data loads) ────────── */
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+
+        .skeleton {
+            background:
+                    linear-gradient(
+                            90deg,
+                            var(--bg-elevated) 25%,
+                            var(--bg-hover)    50%,
+                            var(--bg-elevated) 75%
+                    );
+            background-size: 600px 100%;
+            animation:       shimmer 1.4s infinite linear;
+            border-radius:   var(--radius-sm);
+            color:           transparent;
+            user-select:     none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- ═══════════════════════════════════════════════════════
+         TOPBAR
+    ═══════════════════════════════════════════════════════ -->
+    <header id="topbar">
+
+        <!-- Title -->
+        <div id="topbar-title">
+            <span>⬡</span>
+            <h1>OpenGL Pipeline</h1>
+            <span class="title-badge">LWJGL · Java</span>
+        </div>
+
+        <!-- Global search -->
+        <div id="topbar-search-wrap">
+            <span id="search-icon">⌕</span>
+            <input
+                    id="topbar-search"
+                    type="text"
+                    placeholder="Search functions, examples, mistakes…"
+                    autocomplete="off"
+                    spellcheck="false"
+            />
+            <button id="search-clear" title="Clear search">✕</button>
+            <div id="search-results"></div>
+        </div>
+
+        <!-- Controls -->
+        <div id="topbar-controls">
+
+            <!-- Code theme switcher -->
+            <div class="theme-btn-group" id="code-theme-group">
+                <button class="code-theme-btn active" data-code-theme-btn="github-dark">GitHub Dark</button>
+                <button class="code-theme-btn" data-code-theme-btn="dracula">Dracula</button>
+                <button class="code-theme-btn" data-code-theme-btn="one-dark">One Dark</button>
+                <button class="code-theme-btn" data-code-theme-btn="nord">Nord</button>
+                <button class="code-theme-btn" data-code-theme-btn="solarized-dark">Solarized</button>
+                <button class="code-theme-btn" data-code-theme-btn="github-light">GitHub Light</button>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:24px;background:var(--border);flex-shrink:0;"></div>
+
+            <!-- Dark / light toggle -->
+            <button class="btn btn-ghost btn-icon" id="theme-toggle" title="Toggle dark/light mode">
+                <span id="theme-toggle-icon">🌙</span>
+            </button>
+
+            <!-- Mobile sidebar toggle -->
+            <button class="btn btn-ghost btn-icon" id="mobile-sidebar-btn" title="Toggle sidebar">
+                ☰
+            </button>
+
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════════════════ -->
+    <aside id="sidebar">
+
+        <!-- Sidebar header -->
+        <div id="sidebar-header">
+            <div id="sidebar-header-row">
+                <h4>Navigation</h4>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-ghost btn-icon" id="expand-all-btn" title="Expand all">⊞</button>
+                    <button class="btn btn-ghost btn-icon" id="collapse-all-btn" title="Collapse all">⊟</button>
+                </div>
+            </div>
+
+            <!-- Sidebar search -->
+            <div id="sidebar-search-wrap">
+                <span id="sidebar-search-icon">⌕</span>
+                <input
+                        id="sidebar-search"
+                        type="text"
+                        placeholder="Filter functions…"
+                        autocomplete="off"
+                        spellcheck="false"
+                />
+            </div>
+        </div>
+
+        <!-- Sidebar nav — populated by JS -->
+        <nav id="sidebar-nav">
+
+            <!-- Overview item -->
+            <div
+                    class="sidebar-overview-item active"
+                    data-target="overview"
+                    id="sidebar-overview-btn"
+            >
+                <span>◈</span>
+                <span>Pipeline Overview</span>
+            </div>
+
+            <!-- Phase accordions injected here by Step G JS -->
+
+        </nav>
+
+    </aside>
+
+    <!-- Mobile overlay -->
+    <div id="sidebar-overlay"></div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════════════════ -->
+    <main id="main">
+
+        <!-- ── Pipeline overview panel ──────────────────────── -->
+        <div id="overview-panel" class="active">
+
+            <div class="phase-header">
+                <div class="phase-number">00</div>
+                <div class="phase-header-text">
+                    <h2>Full Pipeline Overview</h2>
+                    <p>
+                        Complete OpenGL rendering pipeline implemented in Java with LWJGL.
+                        Click any phase card to navigate to its full documentation.
+                    </p>
+                    <div class="phase-header-meta">
+                        <span class="badge badge-phase">OpenGL 3.3 Core</span>
+                        <span class="badge badge-neutral">11 Phases</span>
+                        <span class="badge badge-neutral">JOML Matrices</span>
+                        <span class="badge badge-neutral">STBImage</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview cards injected by JS -->
+            <div class="overview-grid" id="overview-grid"></div>
+
+        </div>
+
+        <!-- ── Phase panels injected by JS ──────────────────── -->
+        <!-- Each phase gets: <div class="phase-panel" id="phase-{slug}"> -->
+
+    </main>
+
+</div>
+
+<!-- Scroll to top -->
+<button id="scroll-top" title="Back to top">↑</button>
+
+<!-- ═══════════════════════════════════════════════════════
+     DATA CHECK — shown if pipeline_data.js failed to load
+═══════════════════════════════════════════════════════ -->
+<div id="data-error" style="
+  display:         none;
+  position:        fixed;
+  inset:           0;
+  background:      var(--bg-base);
+  z-index:         999;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             16px;
+  font-family:     var(--font-sans);
+">
+    <div style="font-size:2.5rem;">⚠</div>
+    <h2 style="color:var(--text-primary);">pipeline_data.js not found</h2>
+    <p style="color:var(--text-muted);max-width:400px;text-align:center;">
+        Make sure <code style="color:var(--accent);font-family:var(--font-mono);">pipeline_data.js</code>
+        is in the same directory as this HTML file and declares
+        <code style="color:var(--accent);font-family:var(--font-mono);">const PIPELINE_DATA = {...}</code>
+    </p>
+</div>
+
+<script>
+    // ── Guard: verify PIPELINE_DATA loaded ────────────────────────
+    (function() {
+        if (typeof PIPELINE_DATA === 'undefined') {
+            document.getElementById('data-error').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    })();
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════
+       STEP G — DATA RENDERER
+       Reads PIPELINE_DATA and builds:
+       - Sidebar phase accordions
+       - Overview grid cards
+       - All phase panels with every section
+       Also contains the syntax highlighter.
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── Syntax highlighter ─────────────────────────────────────
+       Tokenises Java/GLSL snippets into span.tok-* elements.
+       No external dependency — regex based, covers the pipeline.
+    ──────────────────────────────────────────────────────────── */
+    const KEYWORDS = new Set([
+        'public','private','protected','class','interface','extends',
+        'implements','new','return','void','int','float','double',
+        'boolean','long','char','byte','short','static','final',
+        'if','else','for','while','do','switch','case','break',
+        'continue','try','catch','finally','throw','throws',
+        'import','package','this','super','null','true','false',
+        'instanceof','abstract','enum','default','native','synchronized',
+        'transient','volatile','const','goto','String'
+    ]);
+
+    const GL_CONSTANTS = new Set([
+        'GL_TRIANGLES','GL_FLOAT','GL_UNSIGNED_INT','GL_UNSIGNED_BYTE',
+        'GL_UNSIGNED_SHORT','GL_ARRAY_BUFFER','GL_ELEMENT_ARRAY_BUFFER',
+        'GL_STATIC_DRAW','GL_DYNAMIC_DRAW','GL_STREAM_DRAW',
+        'GL_VERTEX_SHADER','GL_FRAGMENT_SHADER','GL_GEOMETRY_SHADER',
+        'GL_COMPILE_STATUS','GL_LINK_STATUS','GL_VALIDATE_STATUS',
+        'GL_ACTIVE_UNIFORMS','GL_INFO_LOG_LENGTH',
+        'GL_TEXTURE_2D','GL_TEXTURE_CUBE_MAP','GL_TEXTURE0','GL_TEXTURE1',
+        'GL_RGBA','GL_RGB','GL_RED','GL_SRGB_ALPHA','GL_DEPTH_COMPONENT',
+        'GL_TEXTURE_MIN_FILTER','GL_TEXTURE_MAG_FILTER',
+        'GL_TEXTURE_WRAP_S','GL_TEXTURE_WRAP_T',
+        'GL_LINEAR','GL_NEAREST','GL_LINEAR_MIPMAP_LINEAR',
+        'GL_REPEAT','GL_CLAMP_TO_EDGE','GL_MIRRORED_REPEAT',
+        'GL_DEPTH_TEST','GL_BLEND','GL_CULL_FACE','GL_STENCIL_TEST',
+        'GL_MULTISAMPLE','GL_SCISSOR_TEST',
+        'GL_LESS','GL_LEQUAL','GL_ALWAYS','GL_NEVER',
+        'GL_GREATER','GL_EQUAL','GL_NOTEQUAL',
+        'GL_BACK','GL_FRONT','GL_FRONT_AND_BACK',
+        'GL_CCW','GL_CW',
+        'GL_FILL','GL_LINE','GL_POINT',
+        'GL_SRC_ALPHA','GL_ONE_MINUS_SRC_ALPHA','GL_ONE','GL_ZERO',
+        'GL_FUNC_ADD','GL_FUNC_SUBTRACT','GL_MIN','GL_MAX',
+        'GL_COLOR_BUFFER_BIT','GL_DEPTH_BUFFER_BIT','GL_STENCIL_BUFFER_BIT',
+        'GL_FRAMEBUFFER','GL_READ_FRAMEBUFFER','GL_DRAW_FRAMEBUFFER',
+        'GL_COLOR_ATTACHMENT0','GL_COLOR_ATTACHMENT1',
+        'GL_DEPTH_ATTACHMENT','GL_STENCIL_ATTACHMENT',
+        'GL_DEPTH_STENCIL_ATTACHMENT',
+        'GL_RENDERBUFFER','GL_DEPTH24_STENCIL8','GL_DEPTH_COMPONENT24',
+        'GL_DEPTH_COMPONENT32F','GL_RGBA8',
+        'GL_FRAMEBUFFER_COMPLETE','GL_UNIFORM_BUFFER',
+        'GL_KEEP','GL_REPLACE','GL_INCR','GL_DECR','GL_INVERT',
+        'GL_VERSION','GL_VENDOR','GL_RENDERER','GL_SHADING_LANGUAGE_VERSION',
+        'GL_MAX_TEXTURE_IMAGE_UNITS','GL_MAX_VERTEX_ATTRIBS',
+        'GL_MAX_UNIFORM_BLOCK_SIZE','GL_FLOAT_MAT4','GL_SAMPLER_2D',
+        'GL_TRUE','GL_FALSE','GL_INVALID_INDEX',
+        'GLFW_CONTEXT_VERSION_MAJOR','GLFW_CONTEXT_VERSION_MINOR',
+        'GLFW_OPENGL_PROFILE','GLFW_OPENGL_CORE_PROFILE',
+        'GLFW_OPENGL_COMPAT_PROFILE','GLFW_OPENGL_FORWARD_COMPAT',
+        'GLFW_VISIBLE','GLFW_RESIZABLE','GLFW_TRUE','GLFW_FALSE',
+        'GLFW_KEY_ESCAPE','GLFW_KEY_W','GLFW_KEY_A',
+        'GLFW_KEY_S','GLFW_KEY_D','GLFW_KEY_SPACE',
+        'GLFW_PRESS','GLFW_RELEASE','GLFW_REPEAT',
+        'GLFW_CURSOR','GLFW_CURSOR_DISABLED',
+        'GLFW_CURSOR_HIDDEN','GLFW_CURSOR_NORMAL',
+        'GLFW_STICKY_KEYS','GLFW_RAW_MOUSE_MOTION',
+        'GLFW_MOUSE_BUTTON_LEFT','GLFW_MOUSE_BUTTON_RIGHT',
+        'GLFW_MOUSE_BUTTON_MIDDLE',
+        'NULL','Float','Integer','Math','System','Files','Path',
+        'BufferUtils','MemoryUtil','MemoryStack','STBImage','Callbacks',
+        'GL','GLFW'
+    ]);
+
+    function escHtml(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function highlight(code) {
+        // Split into lines, process each
+        return code.split('\n').map(line => {
+            let result = '';
+            let i = 0;
+            const len = line.length;
+
+            while (i < len) {
+                // Single-line comment
+                if (line[i] === '/' && line[i+1] === '/') {
+                    result += `<span class="tok-comment">${escHtml(line.slice(i))}</span>`;
+                    i = len;
+                    continue;
+                }
+
+                // String literal
+                if (line[i] === '"') {
+                    let j = i + 1;
+                    while (j < len && !(line[j] === '"' && line[j-1] !== '\\')) j++;
+                    j++;
+                    result += `<span class="tok-string">${escHtml(line.slice(i, j))}</span>`;
+                    i = j;
+                    continue;
+                }
+
+                // Annotation
+                if (line[i] === '@') {
+                    let j = i + 1;
+                    while (j < len && /\w/.test(line[j])) j++;
+                    result += `<span class="tok-annotation">${escHtml(line.slice(i, j))}</span>`;
+                    i = j;
+                    continue;
+                }
+
+                // Number
+                if (/[0-9]/.test(line[i]) && (i === 0 || !/\w/.test(line[i-1]))) {
+                    let j = i;
+                    while (j < len && /[0-9._xXa-fA-FLlf]/.test(line[j])) j++;
+                    result += `<span class="tok-number">${escHtml(line.slice(i, j))}</span>`;
+                    i = j;
+                    continue;
+                }
+
+                // Word token — keyword, constant, type, function, or var
+                if (/[a-zA-Z_$]/.test(line[i])) {
+                    let j = i;
+                    while (j < len && /[\w$]/.test(line[j])) j++;
+                    const word = line.slice(i, j);
+
+                    // Check what follows (for function detection)
+                    const afterWord = line.slice(j).trimStart();
+                    const isCall = afterWord.startsWith('(');
+
+                    let cls = 'tok-var';
+                    if (KEYWORDS.has(word))     cls = 'tok-keyword';
+                    else if (GL_CONSTANTS.has(word)) cls = 'tok-constant';
+                    else if (/^[A-Z]/.test(word) && !isCall) cls = 'tok-type';
+                    else if (isCall)             cls = 'tok-fn';
+
+                    result += `<span class="${cls}">${escHtml(word)}</span>`;
+                    i = j;
+                    continue;
+                }
+
+                // Operator chars
+                if (/[=+\-*/<>!&|^%~?:;,]/.test(line[i])) {
+                    result += `<span class="tok-operator">${escHtml(line[i])}</span>`;
+                    i++;
+                    continue;
+                }
+
+                // Everything else (brackets, spaces)
+                result += escHtml(line[i]);
+                i++;
+            }
+
+            return result;
+        }).join('\n');
+    }
+
+    /* ── Helper: safe text ──────────────────────────────────────── */
+    function txt(str) {
+        return String(str || '').trim();
+    }
+
+    /* ── Build a highlighted code block ────────────────────────── */
+    function buildCodeBlock(snippet, location, description) {
+        const highlighted = highlight(txt(snippet));
+        return `
+    <div class="code-example-wrap">
+      <div class="code-example-meta">
+        <span class="code-location-badge">${escHtml(txt(location))}</span>
+      </div>
+      ${description ? `<p class="code-description">${escHtml(txt(description))}</p>` : ''}
+      <div class="code-block-wrap">
+        <button class="copy-btn" data-snippet="${escHtml(txt(snippet))}">Copy</button>
+        <pre><code>${highlighted}</code></pre>
+      </div>
+    </div>`;
+    }
+
+    /* ── Build parameter table ──────────────────────────────────── */
+    function buildParamTable(params) {
+        if (!params || params.length === 0) return '';
+
+        const rows = params.map(p => {
+            const alts = (p.alternatives || []).map(a =>
+                `<div class="param-alt-item">
+        <span class="param-alt-const">${escHtml(a.constant)}</span>
+        <span class="param-alt-when">${escHtml(a.use_when)}</span>
+      </div>`
+            ).join('');
+
+            const altBlock = alts
+                ? `<div class="param-alternatives">
+           <div class="param-alt-label">Alternatives — hover to expand</div>
+           ${alts}
+         </div>`
+                : '';
+
+            return `
+      <tr class="param-row">
+        <td><span class="param-name">${escHtml(txt(p.name))}</span></td>
+        <td><span class="param-type">${escHtml(txt(p.type))}</span></td>
+        <td>
+          <span class="param-value">${escHtml(txt(p.value))}</span>
+          ${altBlock}
+        </td>
+        <td>${escHtml(txt(p.description))}</td>
+      </tr>`;
+        }).join('');
+
+        return `
+    <table class="param-table">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Type</th>
+          <th>Value / Default</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+    }
+
+    /* ── Build a single function card ──────────────────────────── */
+    function buildFnCard(fn, type) {
+        const badgeClass = type === 'core' ? 'badge-core' : 'badge-supporting';
+        const badgeLabel = type === 'core' ? 'Core' : 'Supporting';
+        const cardId     = `fn-${slugify(fn.name)}`;
+
+        const paramTable  = buildParamTable(fn.parameters);
+        const exampleCall = fn.example_call
+            ? buildCodeBlock(fn.example_call, 'Example call', '')
+            : '';
+
+        return `
+    <div class="fn-card" id="${cardId}" data-fn-name="${escHtml(fn.name)}">
+      <div class="fn-card-header" onclick="toggleFnCard(this)">
+        <div class="fn-card-header-left">
+          <div class="fn-name-row">
+            <div class="fn-name-wrap">
+              <span class="fn-name">${escHtml(fn.name)}</span>
+              <div class="fn-signature-tooltip">${escHtml(txt(fn.signature))}</div>
+            </div>
+            <span class="badge ${badgeClass}">${badgeLabel}</span>
+          </div>
+          ${fn.returns
+            ? `<span class="fn-returns">→ ${escHtml(txt(fn.returns))}</span>`
+            : ''}
+          <p class="fn-description">${escHtml(txt(fn.description))}</p>
+        </div>
+        <span class="fn-card-toggle">▼</span>
+      </div>
+      <div class="fn-card-body">
+        ${paramTable}
+        ${exampleCall}
+      </div>
+    </div>`;
+    }
+
+    /* ── Build execution order list ─────────────────────────────── */
+    function buildExecOrder(steps) {
+        if (!steps || steps.length === 0) return '<p class="empty-state">No steps defined.</p>';
+
+        const items = steps.map(s => `
+    <div class="exec-step">
+      <span class="exec-step-num">${String(s.step).padStart(2, '0')}</span>
+      <div class="exec-step-content">
+        <div class="exec-step-call">${escHtml(txt(s.call))}</div>
+        <div class="exec-step-reason">${escHtml(txt(s.reason))}</div>
+      </div>
+    </div>`).join('');
+
+        return `<div class="exec-list">${items}</div>`;
+    }
+
+    /* ── Build integration context ──────────────────────────────── */
+    function buildIntegration(ctx) {
+        if (!ctx) return '';
+        return `
+    <div class="integration-grid">
+      <div class="integration-block integration-fits">
+        <div class="integration-block-label">
+          <span class="dot"></span>
+          Role in Pipeline
+        </div>
+        <p>${escHtml(txt(ctx.fits_in_pipeline))}</p>
+      </div>
+      <div class="integration-block integration-after">
+        <div class="integration-block-label">
+          <span class="dot"></span>
+          Comes After
+        </div>
+        <p>${escHtml(txt(ctx.comes_after))}</p>
+      </div>
+      <div class="integration-block integration-before">
+        <div class="integration-block-label">
+          <span class="dot"></span>
+          Comes Before
+        </div>
+        <p>${escHtml(txt(ctx.comes_before))}</p>
+      </div>
+    </div>`;
+    }
+
+    /* ── Build mistake cards ────────────────────────────────────── */
+    function buildMistakes(mistakes) {
+        if (!mistakes || mistakes.length === 0)
+            return '<p class="empty-state">No mistakes defined.</p>';
+
+        return mistakes.map(m => `
+    <div class="mistake-card">
+      <div class="mistake-trap">
+        <span class="mistake-icon">⚠</span>
+        <span class="mistake-trap-text">${escHtml(txt(m.trap))}</span>
+      </div>
+      <div class="mistake-details">
+        <div class="mistake-row">
+          <span class="mistake-row-label mistake-symptom-label">Symptom</span>
+          <span class="mistake-row-text">${escHtml(txt(m.symptom))}</span>
+        </div>
+        <div class="mistake-row">
+          <span class="mistake-row-label mistake-fix-label">Fix</span>
+          <span class="mistake-row-text">${escHtml(txt(m.fix))}</span>
+        </div>
+      </div>
+    </div>`).join('');
+    }
+
+    /* ── Build a complete phase panel ───────────────────────────── */
+    function buildPhasePanel(phase, index, total) {
+        const phases = PIPELINE_DATA.phases;
+        const prev   = index > 0           ? phases[index - 1] : null;
+        const next   = index < total - 1   ? phases[index + 1] : null;
+
+        const coreCount  = (phase.core_functions       || []).length;
+        const suppCount  = (phase.supporting_functions || []).length;
+        const stepCount  = (phase.execution_order      || []).length;
+        const trapCount  = (phase.common_mistakes      || []).length;
+
+        const coreFns  = (phase.core_functions       || []).map(f => buildFnCard(f, 'core')).join('');
+        const suppFns  = (phase.supporting_functions || []).map(f => buildFnCard(f, 'supporting')).join('');
+        const execHtml = buildExecOrder(phase.execution_order);
+        const codeHtml = phase.code_example && phase.code_example.snippet
+            ? buildCodeBlock(
+                phase.code_example.snippet,
+                phase.code_example.location,
+                phase.code_example.description
+            )
+            : '<p class="empty-state">No code example defined.</p>';
+        const integHtml   = buildIntegration(phase.integration_context);
+        const mistakeHtml = buildMistakes(phase.common_mistakes);
+
+        const prevBtn = prev
+            ? `<button class="phase-nav-btn" onclick="showPhase('${prev.slug}')">
+         <span class="nav-arrow-left">←</span>
+         <div class="phase-nav-label">
+           <span class="phase-nav-hint">Previous</span>
+           <span class="phase-nav-name">${escHtml(prev.name)}</span>
+         </div>
+       </button>`
+            : `<button class="phase-nav-btn" disabled>
+         <span class="nav-arrow-left">←</span>
+         <div class="phase-nav-label">
+           <span class="phase-nav-hint">Previous</span>
+           <span class="phase-nav-name">—</span>
+         </div>
+       </button>`;
+
+        const nextBtn = next
+            ? `<button class="phase-nav-btn" onclick="showPhase('${next.slug}')">
+         <div class="phase-nav-label">
+           <span class="phase-nav-hint">Next</span>
+           <span class="phase-nav-name">${escHtml(next.name)}</span>
+         </div>
+         <span class="nav-arrow-right">→</span>
+       </button>`
+            : `<button class="phase-nav-btn" disabled>
+         <div class="phase-nav-label">
+           <span class="phase-nav-hint">Next</span>
+           <span class="phase-nav-name">—</span>
+         </div>
+         <span class="nav-arrow-right">→</span>
+       </button>`;
+
+        return `
+    <div class="phase-panel" id="phase-${phase.slug}">
+
+      <div class="phase-header">
+        <div class="phase-number">${String(phase.order).padStart(2,'0')}</div>
+        <div class="phase-header-text">
+          <h2>${escHtml(phase.name)}</h2>
+          <div class="phase-header-meta">
+            <span class="badge badge-phase">${phase.slug}</span>
+            <span class="badge badge-core">${coreCount} core</span>
+            <span class="badge badge-supporting">${suppCount} supporting</span>
+            <span class="badge badge-neutral">${stepCount} steps</span>
+            <span class="badge badge-warn">${trapCount} traps</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Core Functions -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>⬡ Core Functions</h3>
+          <span class="section-count">${coreCount}</span>
+        </div>
+        ${coreFns || '<p class="empty-state">No core functions defined.</p>'}
+      </div>
+
+      <!-- 2. Supporting Functions -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>◈ Supporting Functions</h3>
+          <span class="section-count">${suppCount}</span>
+        </div>
+        ${suppFns || '<p class="empty-state">No supporting functions defined.</p>'}
+      </div>
+
+      <!-- 3. Execution Order -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>↳ Execution Order</h3>
+          <span class="section-count">${stepCount} steps</span>
+        </div>
+        ${execHtml}
+      </div>
+
+      <!-- 4. Code Example -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>{ } Code Example</h3>
+        </div>
+        ${codeHtml}
+      </div>
+
+      <!-- 5. Integration Context -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>⇄ Integration Context</h3>
+        </div>
+        ${integHtml}
+      </div>
+
+      <!-- 6. Common Mistakes -->
+      <div class="section-block">
+        <div class="section-title">
+          <h3>⚠ Common Mistakes</h3>
+          <span class="section-count">${trapCount}</span>
+        </div>
+        ${mistakeHtml}
+      </div>
+
+      <!-- Prev / Next navigation -->
+      <div class="phase-nav">
+        ${prevBtn}
+        <span class="badge badge-neutral">${index + 1} / ${total}</span>
+        ${nextBtn}
+      </div>
+
+    </div>`;
+    }
+
+    /* ── Build overview grid cards ──────────────────────────────── */
+    function buildOverviewGrid(phases) {
+        return phases.map(p => {
+            const calls = (p.key_calls || [])
+                .slice(0, 5)
+                .map(c => `<span class="overview-call-pill">${escHtml(c)}</span>`)
+                .join('');
+
+            return `
+      <div class="overview-card" onclick="showPhase('${p.slug}')">
+        <div class="overview-card-num">Phase ${String(p.phase || p.order).padStart(2,'0')}</div>
+        <div class="overview-card-name">${escHtml(p.name)}</div>
+        <div class="overview-card-summary">${escHtml(txt(p.summary))}</div>
+        <div class="overview-card-calls">${calls}</div>
+      </div>`;
+        }).join('');
+    }
+
+    /* ── Build sidebar accordion ────────────────────────────────── */
+    function buildSidebarPhase(phase) {
+        const coreFns = (phase.core_functions       || []);
+        const suppFns = (phase.supporting_functions || []);
+
+        const coreFnItems = coreFns.map(f => `
+    <div class="sidebar-fn-item"
+         data-fn="${escHtml(f.name)}"
+         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}')">
+      <span class="sidebar-fn-dot"></span>
+      ${escHtml(f.name)}
+    </div>`).join('');
+
+        const suppFnItems = suppFns.map(f => `
+    <div class="sidebar-fn-item"
+         data-fn="${escHtml(f.name)}"
+         onclick="showPhaseAndScrollToFn('${phase.slug}', '${slugify(f.name)}')">
+      <span class="sidebar-fn-dot"></span>
+      ${escHtml(f.name)}
+    </div>`).join('');
+
+        const coreFnGroup = coreFnItems ? `
+    <div class="sidebar-fn-group">
+      <div class="sidebar-fn-group-label">Core</div>
+      ${coreFnItems}
+    </div>` : '';
+
+        const suppFnGroup = suppFnItems ? `
+    <div class="sidebar-fn-group">
+      <div class="sidebar-fn-group-label">Supporting</div>
+      ${suppFnItems}
+    </div>` : '';
+
+        return `
+    <div class="sidebar-phase" id="sidebar-phase-${phase.slug}">
+      <div class="sidebar-phase-header"
+           onclick="toggleSidebarPhase('${phase.slug}')">
+        <span class="sidebar-phase-num">${String(phase.order).padStart(2,'0')}</span>
+        <span class="sidebar-phase-name">${escHtml(phase.name)}</span>
+        <span class="sidebar-phase-chevron">▾</span>
+      </div>
+      <div class="sidebar-phase-body">
+        ${coreFnGroup}
+        ${suppFnGroup}
+      </div>
+    </div>`;
+    }
+
+    /* ── Slug helper ────────────────────────────────────────────── */
+    function slugify(str) {
+        return String(str)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    /* ── Mount everything ───────────────────────────────────────── */
+    function mount() {
+        if (typeof PIPELINE_DATA === 'undefined') return;
+
+        const phases = PIPELINE_DATA.phases || [];
+        const overview = PIPELINE_DATA.pipeline_overview || [];
+        const mainEl   = document.getElementById('main');
+        const sideNav  = document.getElementById('sidebar-nav');
+        const overviewGrid = document.getElementById('overview-grid');
+
+        // Build overview grid
+        const overviewSource = overview.length > 0 ? overview : phases.map(p => ({
+            phase:   p.order,
+            name:    p.name,
+            slug:    p.slug,
+            summary: p.integration_context && p.integration_context.fits_in_pipeline
+                ? p.integration_context.fits_in_pipeline.slice(0, 120) + '…'
+                : '',
+            key_calls: (p.core_functions || []).slice(0, 5).map(f => f.name)
+        }));
+
+        overviewGrid.innerHTML = buildOverviewGrid(overviewSource);
+
+        // Build phase panels and sidebar entries
+        let sidebarHtml = sideNav.innerHTML; // keep overview btn
+        phases.forEach((phase, i) => {
+            // Phase panel
+            mainEl.insertAdjacentHTML('beforeend', buildPhasePanel(phase, i, phases.length));
+            // Sidebar entry
+            sidebarHtml += buildSidebarPhase(phase);
+        });
+        sideNav.innerHTML = sidebarHtml;
+
+        // Re-attach overview sidebar click
+        document.getElementById('sidebar-overview-btn')
+            .addEventListener('click', () => showPhase('overview'));
+    }
+
+    /* ── Show a phase panel ─────────────────────────────────────── */
+    function showPhase(slug) {
+        // Hide all panels
+        document.querySelectorAll('.phase-panel, #overview-panel')
+            .forEach(el => el.classList.remove('active'));
+
+        // Show target
+        const target = slug === 'overview'
+            ? document.getElementById('overview-panel')
+            : document.getElementById(`phase-${slug}`);
+
+        if (target) {
+            target.classList.add('active');
+            document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Update sidebar active state
+        document.querySelectorAll('.sidebar-phase-header')
+            .forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-overview-item')
+            .forEach(el => el.classList.remove('active'));
+
+        if (slug === 'overview') {
+            document.getElementById('sidebar-overview-btn').classList.add('active');
+        } else {
+            const sideHeader = document.querySelector(
+                `#sidebar-phase-${slug} .sidebar-phase-header`
+            );
+            if (sideHeader) {
+                sideHeader.classList.add('active');
+                // Auto-open accordion
+                openSidebarPhase(slug);
+                // Scroll sidebar to active item
+                sideHeader.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // Update URL hash
+        history.replaceState(null, '', `#${slug}`);
+
+        // Close mobile sidebar
+        closeMobileSidebar();
+    }
+
+    /* ── Show phase and scroll to a specific function card ─────── */
+    function showPhaseAndScrollToFn(slug, fnSlug) {
+        showPhase(slug);
+        setTimeout(() => {
+            const card = document.getElementById(`fn-${fnSlug}`);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Highlight active fn in sidebar
+                document.querySelectorAll('.sidebar-fn-item').forEach(el =>
+                    el.classList.remove('active')
+                );
+                const sideItem = document.querySelector(
+                    `.sidebar-fn-item[data-fn="${card.dataset.fnName}"]`
+                );
+                if (sideItem) sideItem.classList.add('active');
+            }
+        }, 80);
+    }
+
+    /* ── Toggle function card expand/collapse ───────────────────── */
+    function toggleFnCard(headerEl) {
+        const card = headerEl.closest('.fn-card');
+        card.classList.toggle('expanded');
+    }
+
+    /* ── Sidebar accordion controls ─────────────────────────────── */
+    function toggleSidebarPhase(slug) {
+        const phase = document.getElementById(`sidebar-phase-${slug}`);
+        if (phase) phase.classList.toggle('open');
+    }
+
+    function openSidebarPhase(slug) {
+        const phase = document.getElementById(`sidebar-phase-${slug}`);
+        if (phase) phase.classList.add('open');
+    }
+
+    function closeMobileSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('visible');
+    }
+
+    /* ── Deep link on load ──────────────────────────────────────── */
+    function resolveDeepLink() {
+        const hash = window.location.hash.slice(1);
+        if (hash && hash !== 'overview') {
+            const phase = (PIPELINE_DATA.phases || []).find(p => p.slug === hash);
+            if (phase) {
+                showPhase(hash);
+                return;
+            }
+        }
+        showPhase('overview');
+    }
+
+    /* ── Init ───────────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        mount();
+        resolveDeepLink();
+    });
+
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════
+       STEP H — SIDEBAR
+       Accordion state management, expand/collapse all,
+       sidebar search filter, mobile sidebar toggle.
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── Expand / Collapse all ──────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+
+        /* Expand all */
+        document.getElementById('expand-all-btn')
+            .addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-phase')
+                    .forEach(el => el.classList.add('open'));
+            });
+
+        /* Collapse all */
+        document.getElementById('collapse-all-btn')
+            .addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-phase')
+                    .forEach(el => el.classList.remove('open'));
+            });
+
+        /* ── Mobile sidebar toggle ──────────────────────────────── */
+        document.getElementById('mobile-sidebar-btn')
+            .addEventListener('click', () => {
+                const sidebar  = document.getElementById('sidebar');
+                const overlay  = document.getElementById('sidebar-overlay');
+                const isOpen   = sidebar.classList.contains('open');
+
+                if (isOpen) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('visible');
+                } else {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('visible');
+                }
+            });
+
+        /* Tap overlay to close sidebar on mobile */
+        document.getElementById('sidebar-overlay')
+            .addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('visible');
+            });
+
+        /* ── Sidebar search filter ──────────────────────────────── */
+        const sidebarSearch = document.getElementById('sidebar-search');
+
+        sidebarSearch.addEventListener('input', () => {
+            const raw   = sidebarSearch.value;
+            const query = raw.trim().toLowerCase();
+            filterSidebar(query);
+        });
+
+        sidebarSearch.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                sidebarSearch.value = '';
+                filterSidebar('');
+            }
+        });
+
+    });
+
+    /* ── Sidebar filter logic ───────────────────────────────────── */
+    function filterSidebar(query) {
+        const phases = document.querySelectorAll('.sidebar-phase');
+
+        phases.forEach(phaseEl => {
+            const phaseHeader = phaseEl.querySelector('.sidebar-phase-header');
+            const phaseName   = phaseHeader
+                ? phaseHeader.querySelector('.sidebar-phase-name').textContent.toLowerCase()
+                : '';
+
+            const fnItems = phaseEl.querySelectorAll('.sidebar-fn-item');
+            let   anyFnVisible = false;
+
+            fnItems.forEach(item => {
+                const fnName = item.textContent.trim().toLowerCase();
+                const match  = !query || fnName.includes(query) || phaseName.includes(query);
+
+                item.style.display = match ? '' : 'none';
+                if (match) anyFnVisible = true;
+            });
+
+            // Show group labels only if they have visible items
+            phaseEl.querySelectorAll('.sidebar-fn-group').forEach(group => {
+                const visibleItems = group.querySelectorAll('.sidebar-fn-item:not([style*="display: none"])');
+                group.style.display = visibleItems.length > 0 ? '' : 'none';
+            });
+
+            // Show or hide the whole phase accordion
+            const phaseVisible = !query || phaseName.includes(query) || anyFnVisible;
+            phaseEl.style.display = phaseVisible ? '' : 'none';
+
+            // Auto-open phases that have matching functions when searching
+            if (query && anyFnVisible) {
+                phaseEl.classList.add('open');
+            }
+
+            // Restore collapsed state when search is cleared
+            if (!query) {
+                phaseEl.style.display = '';
+                phaseEl.querySelectorAll('.sidebar-fn-item').forEach(i => {
+                    i.style.display = '';
+                });
+                phaseEl.querySelectorAll('.sidebar-fn-group').forEach(g => {
+                    g.style.display = '';
+                });
+            }
+        });
+
+        // Show/hide overview button
+        const overviewBtn = document.getElementById('sidebar-overview-btn');
+        if (overviewBtn) {
+            const overviewMatch = !query || 'pipeline overview'.includes(query);
+            overviewBtn.style.display = overviewMatch ? '' : 'none';
+        }
+    }
+
+    /* ── Keyboard navigation in sidebar ────────────────────────── */
+    document.addEventListener('keydown', e => {
+
+        // Focus sidebar search on '/' key (when not in an input)
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            document.getElementById('sidebar-search').focus();
+            return;
+        }
+
+        // Focus global search on Ctrl+K or Cmd+K
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('topbar-search').focus();
+            return;
+        }
+
+        // Escape: blur any focused input
+        if (e.key === 'Escape') {
+            document.activeElement.blur();
+        }
+
+    });
+
+    /* ── Track active function as user scrolls main panel ──────── */
+    (function() {
+        const mainEl = document.getElementById('main');
+        if (!mainEl) return;
+
+        let scrollTimer = null;
+
+        mainEl.addEventListener('scroll', () => {
+            if (scrollTimer) clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                updateActiveFnFromScroll();
+            }, 80);
+        });
+
+        function updateActiveFnFromScroll() {
+            const cards = document.querySelectorAll('.fn-card');
+            const mainRect = mainEl.getBoundingClientRect();
+            let closestCard = null;
+            let closestDist = Infinity;
+
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const dist = Math.abs(rect.top - mainRect.top - 80);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestCard = card;
+                }
+            });
+
+            if (closestCard) {
+                const fnName = closestCard.dataset.fnName;
+
+                // Update sidebar active fn item
+                document.querySelectorAll('.sidebar-fn-item').forEach(item => {
+                    const match = item.dataset.fn === fnName;
+                    item.classList.toggle('active', match);
+
+                    // Scroll sidebar to keep active item visible
+                    if (match) {
+                        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                });
+            }
+        }
+    })();
+
+    /* ── Restore sidebar open state from URL hash on load ──────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash.slice(1);
+        if (hash && hash !== 'overview') {
+            // Open the matching phase accordion
+            setTimeout(() => {
+                const phaseEl = document.getElementById(`sidebar-phase-${hash}`);
+                if (phaseEl) phaseEl.classList.add('open');
+            }, 50);
+        }
+    });
+
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════
+       STEP I — GLOBAL SEARCH
+       Debounced, case-insensitive, partial-match search
+       across all fields in PIPELINE_DATA.
+       Results appear in a dropdown below the topbar search bar.
+       Clicking a result navigates to the phase + section.
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── Search index ───────────────────────────────────────────── */
+    // Built once on load from PIPELINE_DATA.
+    // Each entry: { phase, phaseSlug, section, text, fnName? }
+    let SEARCH_INDEX = [];
+
+    function buildSearchIndex() {
+        if (typeof PIPELINE_DATA === 'undefined') return;
+
+        const phases = PIPELINE_DATA.phases || [];
+
+        phases.forEach(phase => {
+            const base = { phase: phase.name, phaseSlug: phase.slug };
+
+            /* Core functions */
+            (phase.core_functions || []).forEach(fn => {
+                indexFn(fn, base, 'Core Functions');
+            });
+
+            /* Supporting functions */
+            (phase.supporting_functions || []).forEach(fn => {
+                indexFn(fn, base, 'Supporting Functions');
+            });
+
+            /* Execution order */
+            (phase.execution_order || []).forEach(step => {
+                push(base, 'Execution Order',
+                    `Step ${step.step}: ${step.call} — ${step.reason}`);
+            });
+
+            /* Code example */
+            if (phase.code_example) {
+                const ce = phase.code_example;
+                if (ce.location)    push(base, 'Code Example', ce.location);
+                if (ce.description) push(base, 'Code Example', ce.description);
+                if (ce.snippet)     push(base, 'Code Example', ce.snippet);
+            }
+
+            /* Integration context */
+            if (phase.integration_context) {
+                const ic = phase.integration_context;
+                if (ic.fits_in_pipeline) push(base, 'Integration Context', ic.fits_in_pipeline);
+                if (ic.comes_after)      push(base, 'Integration Context', ic.comes_after);
+                if (ic.comes_before)     push(base, 'Integration Context', ic.comes_before);
+            }
+
+            /* Common mistakes */
+            (phase.common_mistakes || []).forEach(m => {
+                push(base, 'Common Mistakes', `${m.trap} — ${m.symptom} — ${m.fix}`);
+            });
+        });
+
+        /* Pipeline overview */
+        (PIPELINE_DATA.pipeline_overview || []).forEach(p => {
+            const base = { phase: p.name, phaseSlug: p.slug };
+            if (p.summary)  push(base, 'Overview', p.summary);
+            if (p.outputs)  push(base, 'Overview', p.outputs);
+            (p.key_calls || []).forEach(c => push(base, 'Overview', c));
+        });
+    }
+
+    function indexFn(fn, base, section) {
+        const texts = [
+            fn.name,
+            fn.signature,
+            fn.description,
+            fn.returns,
+            fn.example_call
+        ].filter(Boolean);
+
+        (fn.parameters || []).forEach(p => {
+            texts.push(p.name, p.description, p.value, p.type);
+            (p.alternatives || []).forEach(a => {
+                texts.push(a.constant, a.use_when);
+            });
+        });
+
+        texts.forEach(t => {
+            if (t) push(base, section, t, fn.name);
+        });
+    }
+
+    function push(base, section, text, fnName) {
+        SEARCH_INDEX.push({
+            phase:     base.phase,
+            phaseSlug: base.phaseSlug,
+            section,
+            text:      String(text).trim(),
+            fnName:    fnName || null
+        });
+    }
+
+    /* ── Search execution ───────────────────────────────────────── */
+    const MAX_RESULTS = 30;
+
+    function runSearch(query) {
+        if (!query || query.length < 2) return [];
+
+        const q = query.toLowerCase();
+
+        // Score each entry
+        const scored = [];
+        const seen   = new Set(); // deduplicate by phase+section+fnName
+
+        SEARCH_INDEX.forEach(entry => {
+            const haystack = entry.text.toLowerCase();
+            if (!haystack.includes(q)) return;
+
+            // Dedup key — one result per fn per section
+            const dedupeKey = `${entry.phaseSlug}|${entry.section}|${entry.fnName || entry.text.slice(0,40)}`;
+            if (seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+
+            // Score: higher = better match
+            let score = 0;
+            if (entry.fnName && entry.fnName.toLowerCase().includes(q))  score += 40;
+            if (entry.text.toLowerCase().startsWith(q))                   score += 20;
+            if (entry.section === 'Core Functions')                        score += 10;
+            if (entry.section === 'Supporting Functions')                  score += 8;
+            if (entry.section === 'Common Mistakes')                       score += 6;
+            if (entry.section === 'Execution Order')                       score += 4;
+            score += 1; // base
+
+            scored.push({ ...entry, score });
+        });
+
+        // Sort by score descending
+        scored.sort((a, b) => b.score - a.score);
+
+        return scored.slice(0, MAX_RESULTS);
+    }
+
+    /* ── Highlight matched term in result text ──────────────────── */
+    function highlightMatch(text, query) {
+        if (!query) return escHtml(text);
+        const idx = text.toLowerCase().indexOf(query.toLowerCase());
+        if (idx === -1) return escHtml(text);
+
+        // Show context window around the match
+        const CTX    = 60;
+        const start  = Math.max(0, idx - CTX);
+        const end    = Math.min(text.length, idx + query.length + CTX);
+        let snippet  = text.slice(start, end);
+        if (start > 0)            snippet = '…' + snippet;
+        if (end < text.length)    snippet = snippet + '…';
+
+        // Highlight
+        const qEsc    = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re      = new RegExp(`(${qEsc})`, 'gi');
+        const escaped = escHtml(snippet);
+        return escaped.replace(
+            new RegExp(escHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+            m => `<mark>${m}</mark>`
+        );
+    }
+
+    /* ── Render results into dropdown ───────────────────────────── */
+    function renderResults(results, query) {
+        const container = document.getElementById('search-results');
+
+        if (results.length === 0) {
+            container.innerHTML = `
+      <div class="search-no-results">
+        No results for "<strong>${escHtml(query)}</strong>"
+      </div>`;
+            container.classList.add('open');
+            return;
+        }
+
+        const header = `
+    <div class="search-results-header">
+      ${results.length} result${results.length !== 1 ? 's' : ''}
+      for "${escHtml(query)}"
+    </div>`;
+
+        const items = results.map((r, i) => {
+            const fnAttr  = r.fnName ? `data-fn-slug="${slugify(r.fnName)}"` : '';
+            return `
+      <div class="search-result-item"
+           data-phase-slug="${escHtml(r.phaseSlug)}"
+           ${fnAttr}
+           style="animation-delay:${i * 18}ms">
+        <div class="search-result-phase">${escHtml(r.phase)}</div>
+        <div class="search-result-section">${escHtml(r.section)}</div>
+        <div class="search-result-text">${highlightMatch(r.text, query)}</div>
+      </div>`;
+        }).join('');
+
+        container.innerHTML = header + items;
+        container.classList.add('open');
+
+        // Attach click handlers
+        container.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const phaseSlug = item.dataset.phaseSlug;
+                const fnSlug    = item.dataset.fnSlug;
+
+                closeSearchResults();
+                document.getElementById('topbar-search').value = '';
+                document.getElementById('search-clear').style.display = 'none';
+
+                if (fnSlug) {
+                    showPhaseAndScrollToFn(phaseSlug, fnSlug);
+                } else {
+                    showPhase(phaseSlug);
+                }
+            });
+        });
+    }
+
+    /* ── Open / close dropdown ──────────────────────────────────── */
+    function closeSearchResults() {
+        const container = document.getElementById('search-results');
+        container.classList.remove('open');
+        container.innerHTML = '';
+    }
+
+    /* ── Debounce helper ────────────────────────────────────────── */
+    function debounce(fn, delay) {
+        let timer;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    /* ── Wire up topbar search input ────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+
+        buildSearchIndex();
+
+        const input     = document.getElementById('topbar-search');
+        const clearBtn  = document.getElementById('search-clear');
+        const results   = document.getElementById('search-results');
+
+        /* Debounced search — 150ms like Google */
+        const onInput = debounce(() => {
+            const query = input.value.trim();
+
+            // Show/hide clear button
+            clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+            if (query.length < 2) {
+                closeSearchResults();
+                return;
+            }
+
+            const matches = runSearch(query);
+            renderResults(matches, query);
+        }, 150);
+
+        input.addEventListener('input', onInput);
+
+        /* Clear button */
+        clearBtn.addEventListener('click', () => {
+            input.value            = '';
+            clearBtn.style.display = 'none';
+            closeSearchResults();
+            input.focus();
+        });
+
+        /* Keyboard: Escape closes results */
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeSearchResults();
+                input.blur();
+            }
+
+            /* Arrow keys navigate results */
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = results.querySelectorAll('.search-result-item');
+                if (items.length === 0) return;
+
+                const active = results.querySelector('.search-result-item.keyboard-active');
+                let   next   = null;
+
+                if (!active) {
+                    next = e.key === 'ArrowDown' ? items[0] : items[items.length - 1];
+                } else {
+                    const idx = Array.from(items).indexOf(active);
+                    active.classList.remove('keyboard-active');
+                    if (e.key === 'ArrowDown') {
+                        next = items[Math.min(idx + 1, items.length - 1)];
+                    } else {
+                        next = items[Math.max(idx - 1, 0)];
+                    }
+                }
+
+                if (next) {
+                    next.classList.add('keyboard-active');
+                    next.scrollIntoView({ block: 'nearest' });
+                }
+            }
+
+            /* Enter fires the keyboard-active result */
+            if (e.key === 'Enter') {
+                const active = results.querySelector('.search-result-item.keyboard-active');
+                if (active) active.click();
+            }
+        });
+
+        /* Click outside closes results */
+        document.addEventListener('click', e => {
+            const wrap = document.getElementById('topbar-search-wrap');
+            if (!wrap.contains(e.target)) {
+                closeSearchResults();
+            }
+        });
+
+        /* Focus reopens results if query exists */
+        input.addEventListener('focus', () => {
+            const query = input.value.trim();
+            if (query.length >= 2) {
+                const matches = runSearch(query);
+                renderResults(matches, query);
+            }
+        });
+
+    });
+
+    /* ── CSS for keyboard-active result ─────────────────────────── */
+    const searchKbStyle = document.createElement('style');
+    searchKbStyle.textContent = `
+  .search-result-item.keyboard-active {
+    background: var(--bg-hover);
+    border-left: 3px solid var(--accent);
+    padding-left: 11px;
+  }
+`;
+    document.head.appendChild(searchKbStyle);
+
+</script>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════
+       STEP J — UI CONTROLS
+       Dark/light theme toggle, code theme switcher,
+       copy buttons, scroll-to-top button.
+       All preferences persisted to localStorage.
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── Constants ──────────────────────────────────────────────── */
+    const LS_UI_THEME   = 'pipeline-ui-theme';
+    const LS_CODE_THEME = 'pipeline-code-theme';
+
+    const UI_THEMES   = ['dark', 'light'];
+    const CODE_THEMES = [
+        'github-dark',
+        'dracula',
+        'one-dark',
+        'nord',
+        'solarized-dark',
+        'github-light'
+    ];
+
+    /* ── Apply UI theme (dark / light) ─────────────────────────── */
+    function applyUITheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(LS_UI_THEME, theme);
+
+        const icon = document.getElementById('theme-toggle-icon');
+        if (icon) {
+            // Replace the element so the spin animation re-triggers
+            const newIcon = document.createElement('span');
+            newIcon.id        = 'theme-toggle-icon';
+            newIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
+            icon.replaceWith(newIcon);
+        }
+    }
+
+    /* ── Apply code block theme ─────────────────────────────────── */
+    function applyCodeTheme(theme) {
+        document.documentElement.setAttribute('data-code-theme', theme);
+        localStorage.setItem(LS_CODE_THEME, theme);
+
+        // Update active state on buttons
+        document.querySelectorAll('.code-theme-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.codeThemeBtn === theme);
+        });
+    }
+
+    /* ── Restore saved preferences on load ─────────────────────── */
+    function restorePreferences() {
+        const savedUI   = localStorage.getItem(LS_UI_THEME);
+        const savedCode = localStorage.getItem(LS_CODE_THEME);
+
+        if (savedUI   && UI_THEMES.includes(savedUI))     applyUITheme(savedUI);
+        if (savedCode && CODE_THEMES.includes(savedCode))  applyCodeTheme(savedCode);
+    }
+
+    /* ── Dark / light toggle button ─────────────────────────────── */
+    function initThemeToggle() {
+        const btn = document.getElementById('theme-toggle');
+        if (!btn) return;
+
+        btn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyUITheme(current === 'dark' ? 'light' : 'dark');
+        });
+    }
+
+    /* ── Code theme switcher buttons ────────────────────────────── */
+    function initCodeThemeSwitcher() {
+        document.querySelectorAll('.code-theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.codeThemeBtn;
+                if (theme) applyCodeTheme(theme);
+            });
+        });
+    }
+
+    /* ── Copy buttons on code blocks ────────────────────────────── */
+    // Copy buttons are injected by Step G into .code-block-wrap.
+    // We use event delegation on #main so dynamically added
+    // buttons are handled without re-binding.
+    function initCopyButtons() {
+        document.getElementById('main').addEventListener('click', e => {
+            const btn = e.target.closest('.copy-btn');
+            if (!btn) return;
+
+            // Get snippet from data attribute (set by buildCodeBlock in Step G)
+            const snippet = btn.dataset.snippet || '';
+
+            // Fallback: read from sibling <pre><code>
+            const pre  = btn.closest('.code-block-wrap')?.querySelector('pre code');
+            const text = snippet || (pre ? pre.textContent : '');
+
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            }).catch(() => {
+                // Clipboard API unavailable — fallback
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+
+                    btn.textContent = '✓ Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 1500);
+                } catch (err) {
+                    btn.textContent = '✗ Failed';
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                    }, 1500);
+                }
+            });
+        });
+    }
+
+    /* ── Scroll-to-top button ───────────────────────────────────── */
+    function initScrollToTop() {
+        const btn  = document.getElementById('scroll-top');
+        const main = document.getElementById('main');
+        if (!btn || !main) return;
+
+        // Show after scrolling 300px
+        main.addEventListener('scroll', () => {
+            const visible = main.scrollTop > 300;
+            btn.classList.toggle('visible', visible);
+        });
+
+        btn.addEventListener('click', () => {
+            main.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    /* ── Expand / collapse all function cards in active phase ───── */
+    function initFnCardControls() {
+        // Keyboard shortcut: Alt+E = expand all, Alt+C = collapse all
+        document.addEventListener('keydown', e => {
+            if (document.activeElement.tagName === 'INPUT') return;
+
+            if (e.altKey && e.key === 'e') {
+                e.preventDefault();
+                document.querySelectorAll('.fn-card:not(.expanded)')
+                    .forEach(card => card.classList.add('expanded'));
+            }
+
+            if (e.altKey && e.key === 'c') {
+                e.preventDefault();
+                document.querySelectorAll('.fn-card.expanded')
+                    .forEach(card => card.classList.remove('expanded'));
+            }
+        });
+    }
+
+    /* ── Tooltip: show fn signature on name hover ───────────────── */
+    // Tooltips are pure CSS (Step C) — no JS needed.
+    // This function only adds keyboard accessibility.
+    function initTooltipA11y() {
+        document.getElementById('main').addEventListener('focusin', e => {
+            const wrap = e.target.closest('.fn-name-wrap');
+            if (!wrap) return;
+            const tip = wrap.querySelector('.fn-signature-tooltip');
+            if (tip) {
+                tip.style.opacity   = '1';
+                tip.style.transform = 'translateY(0)';
+            }
+        });
+
+        document.getElementById('main').addEventListener('focusout', e => {
+            const wrap = e.target.closest('.fn-name-wrap');
+            if (!wrap) return;
+            const tip = wrap.querySelector('.fn-signature-tooltip');
+            if (tip) {
+                tip.style.opacity   = '';
+                tip.style.transform = '';
+            }
+        });
+    }
+
+    /* ── Phase number in tab title ──────────────────────────────── */
+    function initTitleSync() {
+        // Watch hash changes to update <title>
+        window.addEventListener('hashchange', () => {
+            const hash   = window.location.hash.slice(1);
+            const phases = (typeof PIPELINE_DATA !== 'undefined')
+                ? PIPELINE_DATA.phases || []
+                : [];
+            const phase  = phases.find(p => p.slug === hash);
+
+            document.title = phase
+                ? `${phase.name} — OpenGL Pipeline`
+                : 'OpenGL Pipeline — LWJGL / Java';
+        });
+    }
+
+    /* ── Sidebar toggle keyboard shortcut (Ctrl+B) ──────────────── */
+    function initSidebarShortcut() {
+        document.addEventListener('keydown', e => {
+            if (document.activeElement.tagName === 'INPUT') return;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                document.getElementById('mobile-sidebar-btn').click();
+            }
+        });
+    }
+
+    /* ── Help tooltip: show keyboard shortcuts ──────────────────── */
+    function initKeyboardHelp() {
+        // Inject a small help panel, hidden by default
+        const helpPanel = document.createElement('div');
+        helpPanel.id    = 'kb-help';
+        helpPanel.style.cssText = `
+    display:       none;
+    position:      fixed;
+    bottom:        76px;
+    right:         28px;
+    background:    var(--bg-surface);
+    border:        1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding:       16px 20px;
+    box-shadow:    var(--shadow-md);
+    z-index:       90;
+    min-width:     260px;
+    font-family:   var(--font-sans);
+    font-size:     0.8rem;
+    color:         var(--text-secondary);
+    animation:     fadeSlideIn 200ms ease both;
+  `;
+        helpPanel.innerHTML = `
+    <div style="font-weight:700;color:var(--text-primary);
+                margin-bottom:12px;font-size:0.85rem;">
+      ⌨ Keyboard Shortcuts
+    </div>
+    <div style="display:grid;gap:6px;">
+      ${[
+            ['/',          'Focus sidebar search'],
+            ['Ctrl+K',     'Focus global search'],
+            ['Ctrl+B',     'Toggle sidebar (mobile)'],
+            ['Alt+E',      'Expand all function cards'],
+            ['Alt+C',      'Collapse all function cards'],
+            ['Esc',        'Close search / blur input'],
+            ['↑ ↓',        'Navigate search results'],
+            ['Enter',      'Open highlighted result'],
+        ].map(([key, desc]) => `
+        <div style="display:flex;justify-content:space-between;gap:16px;">
+          <kbd style="
+            font-family:   var(--font-mono);
+            font-size:     0.72rem;
+            background:    var(--bg-elevated);
+            border:        1px solid var(--border);
+            border-radius: 4px;
+            padding:       1px 7px;
+            color:         var(--text-primary);
+            white-space:   nowrap;
+          ">${escHtml(key)}</kbd>
+          <span style="color:var(--text-muted)">${escHtml(desc)}</span>
+        </div>`
+        ).join('')}
+    </div>`;
+        document.body.appendChild(helpPanel);
+
+        // Add help button next to scroll-to-top
+        const helpBtn = document.createElement('button');
+        helpBtn.id    = 'kb-help-btn';
+        helpBtn.title = 'Keyboard shortcuts';
+        helpBtn.textContent = '?';
+        helpBtn.style.cssText = `
+    position:      fixed;
+    bottom:        76px;
+    right:         76px;
+    width:         36px;
+    height:        36px;
+    background:    var(--bg-surface);
+    color:         var(--text-muted);
+    border:        1px solid var(--border);
+    border-radius: 50%;
+    font-size:     0.85rem;
+    font-weight:   700;
+    cursor:        pointer;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    box-shadow:    var(--shadow-sm);
+    z-index:       90;
+    transition:
+      background var(--transition-fast),
+      color      var(--transition-fast),
+      border-color var(--transition-fast);
+  `;
+        document.body.appendChild(helpBtn);
+
+        helpBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            const visible = helpPanel.style.display !== 'none';
+            helpPanel.style.display = visible ? 'none' : 'block';
+        });
+
+        helpBtn.addEventListener('mouseenter', () => {
+            helpBtn.style.background   = 'var(--bg-hover)';
+            helpBtn.style.color        = 'var(--text-primary)';
+            helpBtn.style.borderColor  = 'var(--border-accent)';
+        });
+
+        helpBtn.addEventListener('mouseleave', () => {
+            helpBtn.style.background   = '';
+            helpBtn.style.color        = '';
+            helpBtn.style.borderColor  = '';
+        });
+
+        // Close on outside click
+        document.addEventListener('click', e => {
+            if (!helpPanel.contains(e.target) && e.target !== helpBtn) {
+                helpPanel.style.display = 'none';
+            }
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') helpPanel.style.display = 'none';
+        });
+    }
+
+    /* ── Init all controls ──────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        restorePreferences();
+        initThemeToggle();
+        initCodeThemeSwitcher();
+        initCopyButtons();
+        initScrollToTop();
+        initFnCardControls();
+        initTooltipA11y();
+        initTitleSync();
+        initSidebarShortcut();
+        initKeyboardHelp();
+    });
+
+</script>
+
+</body>
+</html>
